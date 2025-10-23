@@ -253,23 +253,26 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib.colors import BoundaryNorm
 from matplotlib.cm import get_cmap
-
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from matplotlib.ticker import FuncFormatter, MaxNLocator
+import matplotlib.ticker as ticker
+cmap = plt.get_cmap('viridis')
 import matplotlib
 matplotlib.use('Qt5Agg') # Use Agg backend (non-interactive)
 
 # Disable TeX rendering for text elements
-matplotlib.rcParams['text.usetex'] = False
+# matplotlib.rcParams['text.usetex'] = False
 import matplotlib.pyplot as plt
-# os.environ['PATH'] = '/usr/local/texlive/2023/bin:' + os.environ['PATH']
+os.environ['PATH'] = '/usr/local/texlive/2023/bin:' + os.environ['PATH']
 # matplotlib.use("pgf")
 
-# matplotlib.rcParams.update({
-#     'font.family': 'serif',
-#     'font.size': 11,
-#     'text.usetex': True,
-#     'pgf.texsystem': 'pdflatex',
-#     'pgf.rcfonts': False,
-# })
+matplotlib.rcParams.update({
+    'font.family': 'serif',
+    'font.size': 11,
+    'text.usetex': True,
+    'pgf.texsystem': 'pdflatex',
+    'pgf.rcfonts': False,
+})
 # import matplotlib as mpl
 
 # # Increase the path chunk size to avoid OverflowError
@@ -580,33 +583,812 @@ def fftfreq2D(Nx, Ny, dx, dy):
 
 # --------------------------------------------------------------------------------------------------------------------------------------------------
 
+def calculate_power_spectrum(data_2d, delta):
+    F_tilde = np.fft.fft2(data_2d) / np.sqrt(data_2d.shape[0] * data_2d.shape[1])
+    F_inverse = np.fft.ifft2(F_tilde)
+    # plt.contourf(F_inverse, cmap='RdPu', levels=200)
+    # plt.show()
+    F_tilde = np.fft.fftshift(F_tilde)
+    P = np.abs(F_tilde)**2 / (data_2d.shape[0] * data_2d.shape[1])
+    return P
+
+def calculate_fourier_transform(data_2d, delta):
+
+    F_tilde = np.fft.fft2(data_2d) / np.sqrt(data_2d.shape[0] * data_2d.shape[1])
+    # F_inverse = np.fft.ifft2(F_tilde)
+    # plt.contourf(F_inverse, cmap='RdPu', levels=200)
+    # plt.show()
+    F_tilde = np.fft.fftshift(F_tilde)
+    return F_tilde
+
+def calculate_inv_fourier_transform(data_2d, delta):
+
+    F_tilde = np.fft.fft2(data_2d) / np.sqrt(data_2d.shape[0] * data_2d.shape[1])
+    F_inverse = np.fft.ifft2(F_tilde)
+    plt.contourf(F_inverse, cmap='RdPu', levels=200)
+    plt.show()
+
+def fftfreq2D(Nx, Ny, dx, dy):
+    kx = np.fft.fftfreq(Nx, dx)
+    kx = np.fft.fftshift(kx) * 2 * np.pi
+    ky = np.fft.fftfreq(Ny, dy)
+    ky = np.fft.fftshift(ky) * 2 * np.pi
+
+    kx_2d, ky_2d = np.meshgrid(kx, ky, indexing='ij')
+    return kx_2d, ky_2d
+
+# def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t, alpha_t,alpha_t1,custom_bins=None):
+#     for radius in range(1, 51):
+#         theta = np.linspace(0, 2 * np.pi, 500)  # Angular positions
+#         x_circle = radius * np.cos(theta)  # x coordinates on the circle
+#         y_circle = radius * np.sin(theta)  # y coordinates on the circle
+#         circle_values = np.zeros((data_3d1.shape[2], len(theta)))
+        
+#         bin_values_1 = []
+#         bin_values_2 = []
+#         bin_values_3 = []
+        
+#         for z_plane in range(1,data_3d1.shape[2]-1):
+#             x = np.arange(data_3d1.shape[0])
+#             data_2d1 = data_3d1[:, :, z_plane]
+            
+#             mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+#             mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+            
+#             data_2d1[mask_neg_2pi_1] += 2 * np.pi
+#             data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+            
+#             mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+#             mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+            
+#             data_2d1[mask_neg_2pi_1_] +=  np.pi
+#             data_2d1[mask_pos_2pi_1_] -= np.pi
+            
+#             # line1 = cos1(x)
+#             # line2 = cos2(x)
+            
+#             y_index = 125  # The y index for which you want to plot the data
+
+#     #         plt.figure(figsize=(10, 6))
+
+#     # # Loop over the z slices
+#     #         for z in range(1, data_3d1.shape[2], 5):
+#     #             # Extract the data for y=125 for the current z slice
+#     #             data_2d1 = data_3d1[:, y_index, z]
+
+#     #             # Apply phase correction
+#     #             mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+#     #             mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+
+#     #             data_2d1[mask_neg_2pi_1] += 2 * np.pi
+#     #             data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+
+#     #             mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+#     #             mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+
+#     #             data_2d1[mask_neg_2pi_1_] +=  np.pi
+#     #             data_2d1[mask_pos_2pi_1_] -= np.pi
+#     #             x = np.arange(data_3d1.shape[0])
+#     #             # Plot the data against x
+#     #             plt.plot(x, data_2d1, label=f'z={z}')
+
+#     #         plt.plot(x, line1, color='red', linestyle='--', marker='o', label='cos(4 pi x / L)')
+#     #         plt.plot(x, line2, color='blue', linestyle=':', marker='x', label='cos(8 pi x / L)')
+#     #         plt.xlabel('x')
+#     #         plt.ylabel('delta alpha')
+#     #         plt.legend()
+#     #         plt.show()
+
+#             data_2d2 = data_3d2[:, :, z_plane]
+            
+#             mask_neg_2pi_2 = np.isclose(data_2d2, -2 * np.pi, atol=tol)
+#             mask_pos_2pi_2 = np.isclose(data_2d2, 2 * np.pi, atol=tol)
+            
+#             data_2d2[mask_neg_2pi_2] += 2 * np.pi
+#             data_2d2[mask_pos_2pi_2] -= 2 * np.pi
+            
+#             mask_neg_2pi_2_ = np.isclose(data_2d2, - np.pi, atol=tol)
+#             mask_pos_2pi_2_ = np.isclose(data_2d2,  np.pi, atol=tol)
+            
+#             data_2d2[mask_neg_2pi_2_] +=  np.pi
+#             data_2d2[mask_pos_2pi_2_] -= np.pi
+            
+            
+            
+            
+#             phi2t_plane = phi2t[:, :, z_plane]
+            
+#             # phase_corrected = np.where(np.abs(data_2d) > 2*np.pi, data_2d - 2*np.pi*np.sign(data_2d), data_2d)
+#             # data_2d = np.where(np.abs(phase_corrected) > np.pi, phase_corrected + np.pi*np.sign(phase_corrected), phase_corrected)
+#             # if z_plane == 62:
+#                 # bin_values_1 = []
+#                 # bin_values_2 = []
+#                 # bin_values_3 = []
+#                 # radius = 50
+#             theta = np.linspace(0, 2 * np.pi, 500)  # Angular positions
+#             x_circle = radius * np.cos(theta)  # x coordinates on the circle
+#             y_circle = radius * np.sin(theta)  # y coordinates on the circle
+
+#             #     # Interpolate data_2d1 values along the circle
+#             x_indices = np.round(x_circle).astype(int) + data_2d1.shape[1] // 2
+#             y_indices = np.round(y_circle).astype(int) + data_2d1.shape[0] // 2
+#             circle_values[z_plane, :] = data_2d1[y_indices, x_indices]
+#             circle_values_12 = None
+
+#             #     # # Plotting
+#             # if z_plane == 12:
+#             #     circle_values_12 = data_2d1[y_indices, x_indices]
+#             #     plt.figure()
+#             #     plt.plot(theta, circle_values_12)
+#             #     plt.xlabel('Angular Position (radians)')
+#             #     plt.ylabel('Data Values on Circle')
+#             #     plt.title(f'Data Values on Circle of Radius 50 units and z slice of {z_plane}')
+#             #     plt.show()
+#             #     for radius in range(0, 199, 10):
+#                     # y, x = np.ogrid[-200:201, -200:201]
+#                     # circular_mask = x**2 + y**2 < radius**2
+
+#                     # data_2d1 = np.where(circular_mask, 0, data_2d1)
+#                     # data_2d2 = np.where(circular_mask, 0, data_2d2)
+#                     # phi2t_plane = np.where(circular_mask, 0, phi2t_plane)
+
+
+                    
+                    
+#             del_alpha = (data_2d2 - data_2d1)/delta_t
+#             alpha = (alpha_t1 - alpha_t)/delta_t
+#             alpha_slice = alpha[:,:,z_plane]
+#             phi2_del2 = phi2t_plane * np.abs(del_alpha)**2
+#             phi_del = np.sqrt(phi2_del2)
+#             phi2_alpha2 = phi2t_plane * np.abs(alpha_slice)**2
+#             phi_alpha = np.sqrt(phi2_alpha2)
+            
+            
+#         #     # P_values1 = calculate_power_spectrum(phi_del, delta)
+#         #     # P_values2 = calculate_power_spectrum(phi_alpha, delta)
+#             P_values1 = calculate_power_spectrum(data_2d1, delta)
+#             P_values2 = calculate_power_spectrum(phi_del, delta)
+#             P_values3 = calculate_power_spectrum(phi_alpha, delta)
+
+
+#             beta1, beta2 = np.meshgrid(np.arange(Nx), np.arange(Ny), indexing='ij')
+#             beta1_flat = beta1.ravel()
+#             beta2_flat = beta2.ravel()
+
+#             # k_values = np.sqrt((2 * np.pi * beta1_flat) / (Nx * delta))**2 + \
+#             #            np.sqrt((2 * np.pi * beta2_flat) / (Ny * delta))**2
+#             k_values_x, k_values_y = fftfreq2D(Nx, Ny, delta, delta) 
+#             mod_k = np.sqrt(k_values_x**2 + k_values_y**2)
+
+#             n_values = (mod_k * Nx * delta) / (4 * np.pi) # factor of 2 is added to account for the fact that the first bin took up both n = 1 and n = 2 modes.
+            
+#         #     # logic1 = (n_values > 0.5) & (n_values<1.5)
+#         #     # logic12= (n_values > 1.5) & (n_values<2.5)
+
+#         #     # print(np.sum(P_values[logic1]), np.sum(P_values[logic12]))
+#             # fig, axs = plt.subplots(2, 3, figsize=(9, 9))  # Create a 2x2 grid of subplots
+
+#             # # First plot
+#             # im1 = axs[0, 0].contourf(data_2d1, cmap='PuOr', levels=np.linspace(-0.1,0.1,200))  # Fix the colorbar range to [0, 1]
+#             # # axs[0, 0].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ ')
+#             # axs[0, 0].set_title(r'$({\Delta \alpha}) $ ')
+
+#             # # Second plot
+#             # axs[1, 0].hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+#             # # axs[1, 0].set_ylim([0, 2e-6])
+#             # # axs[1, 0].set_yscale('log')
+#             # # axs[1, 0].set_ylim([1e-7, 3.5e-6]) 
+#             # # Third plot
+#             # im2 = axs[0, 1].contourf(phi_del, cmap='plasma', levels=np.linspace(0,0.01,200)) # Fix the colorbar range to [0, 1]
+#             # axs[0, 1].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ ')
+
+#             # # Fourth plot
+#             # axs[1, 1].hist(x=n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+#             # # axs[1, 1].set_ylim([0, 0.5e-6])
+#             # # axs[1, 1].set_yscale('log')
+#             # # axs[1, 1].set_ylim([1e-7, 3.5e-6])               
+#             # axs[1, 1].set_xlabel('n values')
+#             # axs[1, 0].set_ylabel('Power Spectrum')
+#             # # axs[1, 1].set_title(f' Power Spectrum - xy Plane {z_plane + 1}')
+
+#             # im3 = axs[0, 2].contourf(phi_alpha, cmap='plasma', levels=np.linspace(0,0.01,200) ) # Fix the colorbar range to [0, 1]
+#             # axs[0, 2].set_title(r'$(\dot{\alpha}) |\phi|$ ')
+#             # axs[1, 2].hist(x=n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')   
+#             # axs[1, 2].set_ylim([0, 0.5e-6])             
+
+#             # # Create a new axes for the colorbar that spans both subplots
+#             # for ax in axs.flat:
+#             #     box = ax.get_position()
+#             #     ax.set_position([box.x0, box.y0, box.width * 0.85, box.height])
+
+#             # # Create a new axes for the colorbar that spans both subplots
+#             # # cbar_ax = fig.add_axes([0.9, 0.15, 0.02, 0.7])
+#             # # fig.colorbar(im1, cax=cbar_ax)
+
+#             # plt.tight_layout(pad=3.0)  # Increase the padding between the plots
+#             # plt.suptitle("Radius = " + str(radius) + " - xy Plane " + str(z_plane + 1))
+#             # power_path = os.path.join(input_directory, f"4pi_power_spec_xy_plane_{z_plane}.png")
+#             # plt.savefig(power_path, dpi=300)
+#             # plt.show()
+                    
 
 
 
-def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t, alpha_t,alpha_t1,custom_bins=None):
+#                     # P_values1 = calculate_power_spectrum(data_2d1, delta)
+#                     # P_values2 = calculate_power_spectrum(phi_del, delta)
+#                     # P_values3 = calculate_power_spectrum(phi_alpha, delta)
+
+#                     # Extract histogram values for the first three bins
+#         #     hist1, _ = np.histogram(n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#         #     hist2, _ = np.histogram(n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#         #     hist3, _ = np.histogram(n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5, 10.5, 11))
+
+#         #     # Append the first three bin values to the respective lists
+#         #     bin_values_1.append(hist1[:3])
+#         #     bin_values_2.append(hist2[:3])
+#         #     bin_values_3.append(hist3[:3])
+#         #     print(z_plane)
+
+#         #         # # Convert lists to numpy arrays for easier manipulation
+#         # bin_values_1 = np.array(bin_values_1)
+#         # bin_values_2 = np.array(bin_values_2)
+#         # bin_values_3 = np.array(bin_values_3)
+
+#         #         # # Plotting
+#         # radii = np.arange(0, 199, 1)
+
+#         #         # # Plot for the first power spectrum
+#         # fig, axs = plt.subplots(3, 1, figsize=(8, 12))
+
+#         # # Plot for the first power spectrum
+#         # for i in range(3):
+#         #     axs[0].plot(range(1,data_3d1.shape[2]-1), bin_values_1[:, i], label=f'Bin {i+1}')
+#         # axs[0].set_ylabel('Bin Values')
+#         # axs[0].set_title(r'$({\Delta \alpha}) $ Power Spectrum')
+#         # axs[0].legend()
+
+#         # # Plot for the second power spectrum
+#         # for i in range(3):
+#         #     axs[1].plot(range(1,data_3d1.shape[2]-1), bin_values_2[:, i], label=f'Bin {i+1}')
+#         # axs[1].set_ylabel('Bin Values')
+#         # axs[1].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
+#         # axs[1].legend()
+
+#         # # Plot for the third power spectrum
+#         # for i in range(3):
+#         #     axs[2].plot(range(1,data_3d1.shape[2]-1), bin_values_3[:, i], label=f'Bin {i+1}')
+#         # axs[2].set_xlabel('Z Slice')
+#         # axs[2].set_ylabel('Bin Values')
+#         # axs[2].set_title(r'$(\dot{\alpha}) |\phi|$ Power Spectrum')
+#         # axs[2].legend()
+
+#         # plt.tight_layout()
+#         # plt.show()
+                    
+#         # Plotting for the differnt z slices and angular position for delta alpha
+#         plt.figure()
+#         boundaries = np.linspace(-0.0125, 0.0125, 200)
+
+#         # Create a colormap
+#         cmap = get_cmap('viridis')
+
+#         # Create a normalization object
+#         norm = BoundaryNorm(boundaries, cmap.N)
+
+#         plt.imshow(circle_values, aspect='auto', cmap=cmap, extent=[0, 2 * np.pi, 0, data_3d1.shape[2]])
+#         plt.colorbar(label=r'$\Delta \alpha$ Values on Circle')
+#         plt.xlabel('Angular Position (radians)')
+#         plt.ylabel('Z Slice')
+#         plt.title(r'$\Delta \alpha$ Values on Circle of Radius' + f' of {radius} grid lengths'+ '\n' + 'All Z Slices for the ' + f'{frame_t}th time step')
+        
+#             # Set custom ticks and tick labels for the x-axis
+#         plt.xticks(np.linspace(0, 2 * np.pi, 5), ['0', '$\pi/2$', '$\pi$', '$3\pi/2$', '$2\pi$'])
+#         plt.savefig(os.path.join(input_directory, f"plot_{radius}_{frame_t}_wit_norm.png"))
+#         # plt.show()   
+#         plt.close()          
+
+# --------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+
+# def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t, alpha_t,alpha_t1,custom_bins=None):
+#     bin_values_1 = []
+#     bin_values_2 = []
+#     bin_values_3 = []
+#     threshold_values = np.linspace(0.1, 0.9, 9)
+
+# # Initialize lists to store the bin values for each threshold value
+#     bin_values_del_alpha = []
+#     bin_values_alpha_slice = []
+#     for z_plane in range(data_3d1.shape[2]):
+#         x = np.arange(data_3d1.shape[0])
+#         data_2d1 = data_3d1[:, :, z_plane]
+#         # boundary_width = 1  # Define the width of the boundary to be masked
+#         # data_2d1[:boundary_width, :] = 0
+#         # data_2d1[-boundary_width:, :] = 0
+#         # data_2d1[:, :boundary_width] = 0
+#         # data_2d1[:, -boundary_width:] = 0
+        
+#         mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+#         mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+        
+#         data_2d1[mask_neg_2pi_1] += 2 * np.pi
+#         data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+        
+#         mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+#         mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+        
+#         data_2d1[mask_neg_2pi_1_] +=  np.pi
+#         data_2d1[mask_pos_2pi_1_] -= np.pi
+        
+#         # line1 = cos1(x)
+#         # line2 = cos2(x)
+        
+#         y_index = 125  # The y index for which you want to plot the data
+
+# #         plt.figure(figsize=(10, 6))
+
+# # # Loop over the z slices
+# #         for z in range(1, data_3d1.shape[2], 5):
+# #             # Extract the data for y=125 for the current z slice
+# #             data_2d1 = data_3d1[:, y_index, z]
+
+# #             # Apply phase correction
+# #             mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+# #             mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+
+# #             data_2d1[mask_neg_2pi_1] += 2 * np.pi
+# #             data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+
+# #             mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+# #             mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+
+# #             data_2d1[mask_neg_2pi_1_] +=  np.pi
+# #             data_2d1[mask_pos_2pi_1_] -= np.pi
+# #             x = np.arange(data_3d1.shape[0])
+# #             # Plot the data against x
+# #             plt.plot(x, data_2d1, label=f'z={z}')
+
+# #         plt.plot(x, line1, color='red', linestyle='--', marker='o', label='cos(4 pi x / L)')
+# #         plt.plot(x, line2, color='blue', linestyle=':', marker='x', label='cos(8 pi x / L)')
+# #         plt.xlabel('x')
+# #         plt.ylabel('delta alpha')
+# #         plt.legend()
+# #         plt.show()
+
+#         data_2d2 = data_3d2[:, :, z_plane]
+#         # boundary_width = 1  # Define the width of the boundary to be masked
+#         # data_2d2[:boundary_width, :] = 0
+#         # data_2d2[-boundary_width:, :] = 0
+#         # data_2d2[:, :boundary_width] = 0
+#         # data_2d2[:, -boundary_width:] = 0
+        
+#         mask_neg_2pi_2 = np.isclose(data_2d2, -2 * np.pi, atol=tol)
+#         mask_pos_2pi_2 = np.isclose(data_2d2, 2 * np.pi, atol=tol)
+        
+#         data_2d2[mask_neg_2pi_2] += 2 * np.pi
+#         data_2d2[mask_pos_2pi_2] -= 2 * np.pi
+        
+#         mask_neg_2pi_2_ = np.isclose(data_2d2, - np.pi, atol=tol)
+#         mask_pos_2pi_2_ = np.isclose(data_2d2,  np.pi, atol=tol)
+        
+#         data_2d2[mask_neg_2pi_2_] +=  np.pi
+#         data_2d2[mask_pos_2pi_2_] -= np.pi
+        
+        
+        
+        
+#         phi2t_plane = phi2t[:, :, z_plane]
+        
+#         # phase_corrected = np.where(np.abs(data_2d) > 2*np.pi, data_2d - 2*np.pi*np.sign(data_2d), data_2d)
+#         # data_2d = np.where(np.abs(phase_corrected) > np.pi, phase_corrected + np.pi*np.sign(phase_corrected), phase_corrected)
+#         if z_plane == 12:
+#             # for radius in range(0, 49, 1):
+
+#             #     y, x = np.ogrid[-50:51, -50:51]
+#             #     circular_mask = x**2 + y**2 < radius**2
+
+#             #     data_2d1 = np.where(circular_mask, 0, data_2d1)
+#             #     data_2d2 = np.where(circular_mask, 0, data_2d2)
+#             #     phi2t_plane = np.where(circular_mask, 0, phi2t_plane)
+
+
+                
+                
+#             del_alpha = (data_2d2 - data_2d1)/delta_t
+#             alpha = (alpha_t1 - alpha_t)/delta_t
+#             alpha_slice = alpha[:,:,z_plane]
+#             phi2_del2 = phi2t_plane * np.abs(del_alpha)**2
+#             phi_del = np.sqrt(phi2_del2)
+#             phi2_alpha2 = phi2t_plane * np.abs(alpha_slice)**2
+#             phi_alpha = np.sqrt(phi2_alpha2)
+#             for threshold in threshold_values: #this bit is new
+                
+#                 # ---------------------changed stuff after this point---------------------------
+#                 mask = phi2t_plane < threshold
+
+#                 # Apply the mask to the del_alpha and alpha_slice arrays
+#                 del_alpha_masked = np.where(mask, 0, del_alpha)
+#                 alpha_slice_masked = np.where(mask, 0, alpha_slice)
+#                 phi_del_masked = np.where(mask, 0, phi_del)
+#                 phi_alpha_masked = np.where(mask, 0, phi_alpha)
+
+#                 # Calculate the power spectrum for the masked arrays
+#                 P_values_del_alpha = calculate_power_spectrum(phi_del_masked, delta)
+#                 P_values_alpha_slice = calculate_power_spectrum(phi_alpha_masked, delta)
+
+
+                
+#                 # P_values1 = calculate_power_spectrum(phi_del, delta)
+#                 # P_values2 = calculate_power_spectrum(phi_alpha, delta)
+#                 P_values1 = calculate_power_spectrum(data_2d1, delta)
+#                 P_values2 = calculate_power_spectrum(phi_del, delta)
+#                 P_values3 = calculate_power_spectrum(phi_alpha, delta)
+                
+#                 k_values_x, k_values_y = fftfreq2D(Nx, Ny, delta, delta) 
+#                 mod_k = np.sqrt(k_values_x**2 + k_values_y**2)
+                
+                
+#                 n_values = (mod_k * Nx * delta) / (2 * np.pi) # factor of 2 is added to account for the fact that the first bin took up both n = 1 and n = 2 modes.
+#                 # plotting with power spectra
+#                 fig, axs = plt.subplots(2, 2, figsize=(9, 9))  # Create a 2x2 grid of subplots
+
+#                 # First plot
+#                 axs[0, 0].hist(x=n_values.ravel(), weights=P_values_del_alpha.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+#                 # axs[0, 0].set_ylim([0, 0.2e-6])
+
+#                 # Second plot
+#                 im1 = axs[0, 1].contourf(phi_del_masked, cmap='plasma', levels=200 ) # Fix the colorbar range to [0, 1]
+#                 axs[0, 1].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ ')
+
+#                 # Third plot
+#                 axs[1, 0].hist(x=n_values.ravel(), weights=P_values_alpha_slice.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+#                 axs[1, 0].set_xlabel('n values')
+#                 axs[1, 0].set_ylabel('Power Spectrum')
+#                 # axs[1, 0].set_ylim([0, 0.2e-6])
+
+#                 # Fourth plot
+#                 im2 = axs[1, 1].contourf(phi_alpha_masked, cmap='plasma', levels=200 ) # Fix the colorbar range to [0, 1]
+#                 axs[1, 1].set_title(r'$(\dot{\alpha}) |\phi|$ ')
+#                 plt.suptitle(f'Threshold of phi mask : {threshold} ')
+#                 plt.tight_layout()
+#                 filename = "12th_z_plot_threshold_{:.4f}.png".format(threshold)
+#                 frame_path = os.path.join(input_directory, filename)
+#                 plt.savefig(frame_path)
+#                 plt.show()
+                
+#                 # plotting without power spectra and only colorbars
+#                 # fig, axs = plt.subplots(2, 2, figsize=(9, 9))  # Create a 2x2 grid of subplots
+
+#                 # # First plot
+#                 # axs[0, 0].remove()  # Remove the histogram plot
+#                 # divider = make_axes_locatable(axs[0, 1])  # Create a divider for the colorbar
+#                 # cax = divider.append_axes("right", size="5%", pad=0.05)  # Add an axis for the colorbar
+#                 # im1 = axs[0, 1].contourf(data_2d1, cmap='PuOr', levels=np.linspace(-0.1,0.1,200))  # Create the contour plot
+#                 # # axs[0, 1].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ ')
+#                 # fig.colorbar(im1, cax=cax)  # Add colorbar to the contour plot
+
+#                 # # Second plot
+#                 # axs[1, 0].remove()  # Remove the histogram plot
+#                 # divider = make_axes_locatable(axs[1, 1])  # Create a divider for the colorbar
+#                 # cax = divider.append_axes("right", size="5%", pad=0.05)  # Add an axis for the colorbar
+#                 # im2 = axs[1, 1].contourf(data_2d2, cmap='PuOr', levels=np.linspace(-0.1,0.1,200))  # Create the contour plot
+#                 # # axs[1, 1].set_title(r'$(\dot{\alpha}) |\phi|$ ')
+#                 # fig.colorbar(im2, cax=cax)  # Add colorbar to the contour plot
+
+#                 # plt.suptitle(f'Radius of circular mask : {radius} grid points')
+#                 # plt.tight_layout()
+#                 # plt.show()
+                
+
+#                 # Save the figure
+#                 # filename = "12th_z_plot_radius_{:03d}.png".format(radius)
+#                 # frame_path = os.path.join(input_directory, filename)
+#                 # plt.savefig(frame_path)
+
+#                 # # Close the figure to free up memory
+#                 # plt.close(fig)
+#                 # # # Extract histogram values for the first three bins
+#                 # hist1, _ = np.histogram(n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#                 # hist2, _ = np.histogram(n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#                 # hist3, _ = np.histogram(n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5, 10.5, 11))
+
+#                 # # # Append the first three bin values to the respective lists
+#                 # bin_values_1.append(hist1[:3])
+#                 # bin_values_2.append(hist2[:3])
+#                 # bin_values_3.append(hist3[:3])
+                
+#                                 # Extract histogram values for the first three bins
+#                 hist_del_alpha, _ = np.histogram(n_values.ravel(), weights=P_values_del_alpha.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#                 hist_alpha_slice, _ = np.histogram(n_values.ravel(), weights=P_values_alpha_slice.ravel(), bins=np.linspace(0.5, 10.5, 11))
+
+#                 # Append the first three bin values to the respective lists
+#                 bin_values_del_alpha.append(hist_del_alpha[:3])
+#                 bin_values_alpha_slice.append(hist_alpha_slice[:3])
+
+#             # Convert lists to numpy arrays for easier manipulation
+#             # bin_values_1 = np.array(bin_values_1)
+#             # bin_values_2 = np.array(bin_values_2)
+#             # bin_values_3 = np.array(bin_values_3)
+#             bin_values_del_alpha = np.array(bin_values_del_alpha)
+#             bin_values_alpha_slice = np.array(bin_values_alpha_slice)
+
+#             # Plotting
+#             radii = threshold_values
+
+#             # Plot for the first power spectrum
+#             fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+
+#             # Plot for the first power spectrum
+#             # axs[0].plot(radii, bin_values_1[:, 0], label='Bin 1')
+#             # axs[0].plot(radii, bin_values_1[:, 1], label='Bin 2')
+#             # axs[0].plot(radii, bin_values_1[:, 2], label='Bin 3')
+#             # axs[0].set_xlabel('Radius')
+#             # axs[0].set_ylabel('Bin Values')
+#             # axs[0].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
+#             # axs[0].legend()
+
+#             # Plot for the second power spectrum
+#             # axs[1].plot(radii, bin_values_2[:, 0], label='Bin 1')
+#             axs[0].plot(radii, bin_values_del_alpha[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
+#             axs[0].plot(radii, bin_values_alpha_slice[:, 1], label=r'$(\dot{ \alpha}) |\phi|$ Power Spectrum')
+#             axs[0].set_xlabel('Radius')
+#             axs[0].set_ylabel('Bin Values')
+#             axs[0].set_title('Bin 2')
+#             axs[0].legend()
+
+#             # Plot for the third power spectrum
+#             # axs[2].plot(radii, bin_values_3[:, 0], label='Bin 1')
+#             axs[1].plot(radii, bin_values_del_alpha[:, 2], label=r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
+#             axs[1].plot(radii, bin_values_alpha_slice[:, 2], label=r'$(\dot{ \alpha}) |\phi|$ Power Spectrum')
+#             axs[1].set_xlabel('Radius')
+#             axs[1].set_ylabel('Bin Values')
+#             axs[1].set_title('Bin 3')
+#             axs[1].legend()
+
+#             plt.tight_layout()
+#             plt.show()
+
+
+
+# # --------------------------------------------------------------------------------------------------------------------------------------------------
+# # def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t, alpha_t,alpha_t1,custom_bins=None):
+# #     for z_plane in range(data_3d1.shape[2]):
+# #         x = np.arange(data_3d1.shape[0])
+# #         data_2d1 = data_3d1[:, :, z_plane]
+        
+# #         mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+# #         mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+        
+# #         data_2d1[mask_neg_2pi_1] += 2 * np.pi
+# #         data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+        
+# #         mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+# #         mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+        
+# #         data_2d1[mask_neg_2pi_1_] +=  np.pi
+# #         data_2d1[mask_pos_2pi_1_] -= np.pi
+        
+# #         # line1 = cos1(x)
+# #         # line2 = cos2(x)
+# #         Nx, Ny = data_3d1.shape[0], data_3d1.shape[1]
+
+# #         # Create a 2D grid of x values
+# #         x_grid = np.tile(np.arange(Nx), (Ny, 1))
+
+# #         # Calculate line1 and line2 for all y values
+# #         line1_2d = cos1(x_grid)
+# #         line2_2d = cos2(x_grid)
+# #         line3_2d = cos3(x_grid)
+# #         line4_2d = cos4(x_grid)
+# #         line5_2d = cos5(x_grid)
+# #         line6_2d = cos6(x_grid)
+# #         y_index = 125  # The y index for which you want to plot the data
+
+# # #         plt.figure(figsize=(10, 6))
+
+# # # # Loop over the z slices
+# # #         for z in range(1, data_3d1.shape[2], 5):
+# # #             # Extract the data for y=125 for the current z slice
+# # #             data_2d1 = data_3d1[:, y_index, z]
+
+# # #             # Apply phase correction
+# # #             mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+# # #             mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+
+# # #             data_2d1[mask_neg_2pi_1] += 2 * np.pi
+# # #             data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+
+# # #             mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+# # #             mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+
+# # #             data_2d1[mask_neg_2pi_1_] +=  np.pi
+# # #             data_2d1[mask_pos_2pi_1_] -= np.pi
+# # #             x = np.arange(data_3d1.shape[0])
+# # #             # Plot the data against x
+# # #             plt.plot(x, data_2d1, label=f'z={z}')
+
+# # #         plt.plot(x, line1, color='red', linestyle='--', marker='o', label='cos(4 pi x / L)')
+# # #         plt.plot(x, line2, color='blue', linestyle=':', marker='x', label='cos(8 pi x / L)')
+# # #         plt.xlabel('x')
+# # #         plt.ylabel('delta alpha')
+# # #         plt.legend()
+# # #         plt.show()
+
+# #         data_2d2 = data_3d2[:, :, z_plane]
+        
+# #         mask_neg_2pi_2 = np.isclose(data_2d2, -2 * np.pi, atol=tol)
+# #         mask_pos_2pi_2 = np.isclose(data_2d2, 2 * np.pi, atol=tol)
+        
+# #         data_2d2[mask_neg_2pi_2] += 2 * np.pi
+# #         data_2d2[mask_pos_2pi_2] -= 2 * np.pi
+        
+# #         mask_neg_2pi_2_ = np.isclose(data_2d2, - np.pi, atol=tol)
+# #         mask_pos_2pi_2_ = np.isclose(data_2d2,  np.pi, atol=tol)
+        
+# #         data_2d2[mask_neg_2pi_2_] +=  np.pi
+# #         data_2d2[mask_pos_2pi_2_] -= np.pi
+        
+        
+        
+        
+# #         phi2t_plane = phi2t[:, :, z_plane]
+        
+# #         # phase_corrected = np.where(np.abs(data_2d) > 2*np.pi, data_2d - 2*np.pi*np.sign(data_2d), data_2d)
+# #         # data_2d = np.where(np.abs(phase_corrected) > np.pi, phase_corrected + np.pi*np.sign(phase_corrected), phase_corrected)
+
+# #         data_2d1 = np.where(circular_mask, 0, data_2d1)
+# #         data_2d2 = np.where(circular_mask, 0, data_2d2)
+# #         phi2t_plane = np.where(circular_mask, 0, phi2t_plane)
+        
+        
+# #         del_alpha = (data_2d2 - data_2d1)/delta_t
+# #         phi2_del2 = phi2t_plane * np.abs(del_alpha)**2
+        
+        
+# #         P_values1 = calculate_power_spectrum(line1_2d, delta)
+# #         P_values2 = calculate_power_spectrum(line2_2d, delta)
+# #         P_values3 = calculate_power_spectrum(line3_2d, delta)
+# #         P_values4 = calculate_power_spectrum(line4_2d, delta)
+# #         P_values5 = calculate_power_spectrum(line5_2d, delta)
+# #         P_values6 = calculate_power_spectrum(line6_2d, delta)
+        
+# #         # Calculate the Fourier transform
+        
+
+
+# #         beta1, beta2 = np.meshgrid(np.arange(Nx), np.arange(Ny), indexing='ij')
+# #         beta1_flat = beta1.ravel()
+# #         beta2_flat = beta2.ravel()
+
+# #         # k_values = np.sqrt((2 * np.pi * beta1_flat) / (Nx * delta))**2 + \
+# #         #            np.sqrt((2 * np.pi * beta2_flat) / (Ny * delta))**2
+# #         k_values_x, k_values_y = fftfreq2D(Nx, Ny, delta, delta) 
+# #         mod_k = np.sqrt(k_values_x**2 + k_values_y**2)
+
+# #         n_values = (mod_k * Nx * delta) / (2 * np.pi)
+        
+# #         F_values1 = calculate_fourier_transform(line1_2d, delta)
+# #         F_values2 = calculate_fourier_transform(line2_2d, delta)
+# #         F_values3 = calculate_fourier_transform(line3_2d, delta)
+# #         F_values4 = calculate_fourier_transform(line4_2d, delta)
+# #         F_values5 = calculate_fourier_transform(line5_2d, delta)
+
+# #         # Create a 2D grid
+# #         nx, ny = n_values.shape
+# # # Create a 2D grid for each Fourier transform
+# #         fig, axs = plt.subplots(1, 5, figsize=(15, 3))
+
+# #         # Plot the Fourier transform values
+# #         axs[0].imshow(np.abs(F_values1), cmap='hot')
+# #         axs[0].set_title('4')
+# #         axs[1].imshow(np.abs(F_values2), cmap='hot')
+# #         axs[1].set_title('8')
+# #         axs[2].imshow(np.abs(F_values3), cmap='hot')
+# #         axs[2].set_title('16')
+# #         axs[3].imshow(np.abs(F_values4), cmap='hot')
+# #         axs[3].set_title('32')
+# #         axs[4].imshow(np.abs(F_values5), cmap='hot')
+# #         axs[4].set_title('64')
+
+# #         plt.show()
+
+
+        
+# #         # logic1 = (n_values > 0.5) & (n_values<1.5)
+# #         # logic12= (n_values > 1.5) & (n_values<2.5)
+
+# #         # print(np.sum(P_values[logic1]), np.sum(P_values[logic12]))
+
+
+# #         plt.figure(figsize=(15, 10))
+
+# #         # Plot the first histogram
+# #         plt.subplot(2, 3, 1)
+# #         plt.hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='yellow', edgecolor='black', alpha=0.5)
+# #         plt.xlabel('n values')
+# #         plt.ylabel('Power Spectrum')
+# #         plt.title('cos(4 pi x / L)')
+
+# #         # Plot the second histogram
+# #         plt.subplot(2, 3, 2)
+# #         plt.hist(x=n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black', alpha=0.5)
+# #         plt.xlabel('n values')
+# #         plt.ylabel('Power Spectrum')
+# #         plt.title('cos(8 pi x / L)')
+
+# #         # Plot the third histogram
+# #         plt.subplot(2, 3, 3)
+# #         plt.hist(x=n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5,10.5,11), color='pink', edgecolor='black', alpha=0.5)
+# #         plt.xlabel('n values')
+# #         plt.ylabel('Power Spectrum')
+# #         plt.title('cos(16 pi x / L)')
+
+# #         # Plot the fourth histogram
+# #         plt.subplot(2, 3, 4)
+# #         plt.hist(x=n_values.ravel(), weights=P_values4.ravel(), bins=np.linspace(0.5,10.5,11), color='blue', edgecolor='black', alpha=0.5)
+# #         plt.xlabel('n values')
+# #         plt.ylabel('Power Spectrum')
+# #         plt.title('cos(32 pi x / L)')
+
+# #         # Plot the fifth histogram
+# #         plt.subplot(2, 3, 6)
+# #         plt.hist(x=n_values.ravel(), weights=P_values5.ravel(), bins=np.linspace(0.5,10.5,11), color='green', edgecolor='black', alpha=0.5)
+# #         plt.xlabel('n values')
+# #         plt.ylabel('Power Spectrum')
+# #         plt.title('cos(64 pi x / L)')
+
+# #         # Plot the sixth histogram
+# #         # plt.subplot(2, 3, 6)
+# #         # plt.hist(x=n_values.ravel(), weights=P_values6.ravel(), bins=np.linspace(0.5,10.5,11), color='red', edgecolor='black', alpha=0.5)
+# #         # plt.xlabel('n values')
+# #         # plt.ylabel('Power Spectrum')
+# #         # plt.title('cos(128 pi x / L)')
+
+# #         plt.tight_layout()
+
+# #         power_path = os.path.join(input_directory, f"power_spec_xy_plane_{z_plane + 1}.png")
+# #         # plt.savefig(power_path, dpi=300)
+# #         plt.show()
+
+# multiple z plane plotting ----------------------------------------------------------
+
+
+def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t,phi2reft, alpha_t,alpha_t1, time,custom_bins=None):
     bin_values_1 = []
     bin_values_2 = []
     bin_values_3 = []
-    threshold_values = np.linspace(0, 1, 100)
+    threshold_values = np.linspace(0.991, 1, 10)
 
 # Initialize lists to store the bin values for each threshold value
     bin_values_del_alpha = []
     bin_values_alpha_slice = []
-    for z_plane in range(data_3d1.shape[2]):
+    bin_values_del_alpha_all = []
+    bin_values_alpha_slice_all = []
+    z_planes_list = [12]
+    for z_plane in z_planes_list:
         x = np.arange(data_3d1.shape[0])
         data_2d1 = data_3d1[:, :, z_plane]
+        boundary_width = 1  # Define the width of the boundary to be masked
+        data_2d1[:boundary_width, :] = 0
+        data_2d1[-boundary_width:, :] = 0
+        data_2d1[:, :boundary_width] = 0
+        data_2d1[:, -boundary_width:] = 0
         
-        mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
-        mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+
         
-        data_2d1[mask_neg_2pi_1] += 2 * np.pi
-        data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+        # mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+        # mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
         
-        mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
-        mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+        # data_2d1[mask_neg_2pi_1] += 2 * np.pi
+        # data_2d1[mask_pos_2pi_1] -= 2 * np.pi
         
-        data_2d1[mask_neg_2pi_1_] +=  np.pi
-        data_2d1[mask_pos_2pi_1_] -= np.pi
+        # mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+        # mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+        
+        # data_2d1[mask_neg_2pi_1_] +=  np.pi
+        # data_2d1[mask_pos_2pi_1_] -= np.pi
         
         # line1 = cos1(x)
         # line2 = cos2(x)
@@ -644,405 +1426,434 @@ def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t, alpha_t,alpha_
 #         plt.show()
 
         data_2d2 = data_3d2[:, :, z_plane]
+        boundary_width = 1  # Define the width of the boundary to be masked
+        data_2d2[:boundary_width, :] = 0
+        data_2d2[-boundary_width:, :] = 0
+        data_2d2[:, :boundary_width] = 0
+        data_2d2[:, -boundary_width:] = 0
         
-        mask_neg_2pi_2 = np.isclose(data_2d2, -2 * np.pi, atol=tol)
-        mask_pos_2pi_2 = np.isclose(data_2d2, 2 * np.pi, atol=tol)
+        # mask_neg_2pi_2 = np.isclose(data_2d2, -2 * np.pi, atol=tol)
+        # mask_pos_2pi_2 = np.isclose(data_2d2, 2 * np.pi, atol=tol)
         
-        data_2d2[mask_neg_2pi_2] += 2 * np.pi
-        data_2d2[mask_pos_2pi_2] -= 2 * np.pi
+        # data_2d2[mask_neg_2pi_2] += 2 * np.pi
+        # data_2d2[mask_pos_2pi_2] -= 2 * np.pi
         
-        mask_neg_2pi_2_ = np.isclose(data_2d2, - np.pi, atol=tol)
-        mask_pos_2pi_2_ = np.isclose(data_2d2,  np.pi, atol=tol)
+        # mask_neg_2pi_2_ = np.isclose(data_2d2, - np.pi, atol=tol)
+        # mask_pos_2pi_2_ = np.isclose(data_2d2,  np.pi, atol=tol)
         
-        data_2d2[mask_neg_2pi_2_] +=  np.pi
-        data_2d2[mask_pos_2pi_2_] -= np.pi
+        # data_2d2[mask_neg_2pi_2_] +=  np.pi
+        # data_2d2[mask_pos_2pi_2_] -= np.pi
         
         
         
         
         phi2t_plane = phi2t[:, :, z_plane]
+        phi2reft_plane = phi2reft[:, :, z_plane]
+
         
         # phase_corrected = np.where(np.abs(data_2d) > 2*np.pi, data_2d - 2*np.pi*np.sign(data_2d), data_2d)
         # data_2d = np.where(np.abs(phase_corrected) > np.pi, phase_corrected + np.pi*np.sign(phase_corrected), phase_corrected)
-        if z_plane == 12:
-            for radius in range(0, 49, 1):
+        # if z_plane == 87:
+        
 
-                y, x = np.ogrid[-50:51, -50:51]
-                circular_mask = x**2 + y**2 < radius**2
-
-                data_2d1 = np.where(circular_mask, 0, data_2d1)
-                data_2d2 = np.where(circular_mask, 0, data_2d2)
-                phi2t_plane = np.where(circular_mask, 0, phi2t_plane)
-            # for threshold in threshold_values: #this bit is new
-
-                
-                
-                del_alpha = (data_2d2 - data_2d1)/delta_t
-                alpha = (alpha_t1 - alpha_t)/delta_t
-                alpha_slice = alpha[:,:,z_plane]
-                phi2_del2 = phi2t_plane * np.abs(del_alpha)**2
-                phi_del = np.sqrt(phi2_del2)
-                phi2_alpha2 = phi2t_plane * np.abs(alpha_slice)**2
-                phi_alpha = np.sqrt(phi2_alpha2)
-                
-                # ---------------------changed stuff after this point---------------------------
-                # mask = phi2t_plane < threshold
-
-                # Apply the mask to the del_alpha and alpha_slice arrays
-                # del_alpha_masked = np.where(mask, 0, del_alpha)
-                # alpha_slice_masked = np.where(mask, 0, alpha_slice)
-
-                # Calculate the power spectrum for the masked arrays
-                # P_values_del_alpha = calculate_power_spectrum(del_alpha_masked, delta)
-                # P_values_alpha_slice = calculate_power_spectrum(alpha_slice_masked, delta)
+    # Initialize lists to store bin contributions for the current z plane
 
 
-                
-                # P_values1 = calculate_power_spectrum(phi_del, delta)
-                # P_values2 = calculate_power_spectrum(phi_alpha, delta)
-                P_values1 = calculate_power_spectrum(data_2d1, delta)
-                P_values2 = calculate_power_spectrum(phi_del, delta)
-                P_values3 = calculate_power_spectrum(phi_alpha, delta)
-                
-                k_values_x, k_values_y = fftfreq2D(Nx, Ny, delta, delta) 
-                mod_k = np.sqrt(k_values_x**2 + k_values_y**2)
-                
-                
-                n_values = (mod_k * Nx * delta) / (4 * np.pi) # factor of 2 is added to account for the fact that the first bin took up both n = 1 and n = 2 modes.
-                
-                fig, axs = plt.subplots(2, 2, figsize=(9, 9))  # Create a 2x2 grid of subplots
+        for radius in range(10, 25, 1):
 
-                # First plot
-                axs[0, 0].hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
-                axs[0, 0].set_ylim([0, 0.2e-6])
+            y, x = np.ogrid[-100:101, -100:101]
+            circular_mask = x**2 + y**2 < radius**2
 
-                # Second plot
-                im1 = axs[0, 1].contourf(data_2d1, cmap='PuOr', levels=np.linspace(-0.5,0.5,200)) # Fix the colorbar range to [0, 1]
-                axs[0, 1].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ ')
-
-                # Third plot
-                axs[1, 0].hist(x=n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
-                axs[1, 0].set_xlabel('n values')
-                axs[1, 0].set_ylabel('Power Spectrum')
-                axs[1, 0].set_ylim([0, 0.2e-6])
-
-                # Fourth plot
-                im2 = axs[1, 1].contourf(phi_alpha, cmap='plasma', levels=np.linspace(0,0.01,200) ) # Fix the colorbar range to [0, 1]
-                axs[1, 1].set_title(r'$(\dot{\alpha}) |\phi|$ ')
-                plt.suptitle(f'Radius of circular mask : {radius} grid points')
-                plt.tight_layout()
-                plt.show()
-                
-
-                # Save the figure
-                # filename = "12th_z_plot_radius_{:03d}.png".format(radius)
-                # frame_path = os.path.join(input_directory, filename)
-                # plt.savefig(frame_path)
-
-                # # Close the figure to free up memory
-                # plt.close(fig)
-                # # # Extract histogram values for the first three bins
-                # hist1, _ = np.histogram(n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5, 10.5, 11))
-                # hist2, _ = np.histogram(n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5, 10.5, 11))
-                # hist3, _ = np.histogram(n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5, 10.5, 11))
-
-                # # # Append the first three bin values to the respective lists
-                # bin_values_1.append(hist1[:3])
-                # bin_values_2.append(hist2[:3])
-                # bin_values_3.append(hist3[:3])
-                
-                                # Extract histogram values for the first three bins
-                # hist_del_alpha, _ = np.histogram(n_values.ravel(), weights=P_values_del_alpha.ravel(), bins=np.linspace(0.5, 10.5, 11))
-                # hist_alpha_slice, _ = np.histogram(n_values.ravel(), weights=P_values_alpha_slice.ravel(), bins=np.linspace(0.5, 10.5, 11))
-
-                # Append the first three bin values to the respective lists
-                # bin_values_del_alpha.append(hist_del_alpha[:3])
-                # bin_values_alpha_slice.append(hist_alpha_slice[:3])
-
-            # Convert lists to numpy arrays for easier manipulation
-            bin_values_1 = np.array(bin_values_1)
-            bin_values_2 = np.array(bin_values_2)
-            bin_values_3 = np.array(bin_values_3)
-            # bin_values_del_alpha = np.array(bin_values_del_alpha)
-            # bin_values_alpha_slice = np.array(bin_values_alpha_slice)
-
-            # Plotting
-            radii = np.arange(0, 99, 1)
-
-            # Plot for the first power spectrum
-            # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
-
-            # Plot for the first power spectrum
-            # axs[0].plot(radii, bin_values_1[:, 0], label='Bin 1')
-            # axs[0].plot(radii, bin_values_1[:, 1], label='Bin 2')
-            # axs[0].plot(radii, bin_values_1[:, 2], label='Bin 3')
-            # axs[0].set_xlabel('Radius')
-            # axs[0].set_ylabel('Bin Values')
-            # axs[0].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
-            # axs[0].legend()
-
-            # Plot for the second power spectrum
-            # axs[1].plot(radii, bin_values_2[:, 0], label='Bin 1')
-            # axs[0].plot(radii, bin_values_2[:, 1], label='Bin 2')
-            # axs[0].plot(radii, bin_values_2[:, 2], label='Bin 3')
-            # axs[0].set_xlabel('Radius')
-            # axs[0].set_ylabel('Bin Values')
-            # axs[0].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
-            # axs[0].legend()
-
-            # # Plot for the third power spectrum
-            # # axs[2].plot(radii, bin_values_3[:, 0], label='Bin 1')
-            # axs[1].plot(radii, bin_values_3[:, 1], label='Bin 2')
-            # axs[1].plot(radii, bin_values_3[:, 2], label='Bin 3')
-            # axs[1].set_xlabel('Radius')
-            # axs[1].set_ylabel('Bin Values')
-            # axs[1].set_title(r'$(\dot{\alpha}) |\phi|$ Power Spectrum')
-            # axs[1].legend()
-
-            # plt.tight_layout()
-            # plt.show()
+            data_2d1 = np.where(circular_mask, 0, data_2d1)
+            data_2d2 = np.where(circular_mask, 0, data_2d2)
+            phi2t_plane = np.where(circular_mask, 0, phi2t_plane)
+            phi2t_plane_small = phi2t_plane[Nx//2-25:Nx//2+25, Ny//2-25:Ny//2+25]
             
-            # ---------------------plotting code for radii varying across two simulations---------------------------
+            phi2reft_plane = np.where(circular_mask, 0, phi2reft_plane)
+            phi2reft_plane_small = phi2reft_plane[Nx//2-25:Nx//2+25, Ny//2-25:Ny//2+25]
             
-            # data_loaded = np.loadtxt("/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/relevant_files_060224/2000+/npy_files_full_positive_boost_ev_1/4_column_bin_contributions_401.txt")
+        # for threshold in threshold_values: #this bit is new
 
-            # # Create a new radii array for the loaded data
-            # radii_loaded = np.arange(0, 199, 1)
-
-            # # Plot the loaded data
-            # plt.plot(radii_loaded, data_loaded[:, 0], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 2, nx,ny = 401', color='purple', linestyle=' ', marker='o', markersize=3)
-            # plt.plot(radii_loaded, data_loaded[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 3, nx,ny = 401', color='gold', linestyle=' ',marker='o', markersize=3)
-            # plt.plot(radii_loaded, data_loaded[:, 2], label=r'$(\dot{\alpha}) |\phi|$ Bin 2, nx,ny = 401', color='purple', linestyle='-' )
-            # plt.plot(radii_loaded, data_loaded[:, 3], label=r'$(\dot{\alpha}) |\phi|$ Bin 3, nx,ny = 401', color='gold', linestyle='-')
-
-            # # # Plot the current data
-            # plt.plot(radii, bin_values_2[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 2, nx,ny = 201', color='purple', linestyle=' ' ,marker='+', markersize=3)
-            # plt.plot(radii, bin_values_2[:, 2], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 3, nx,ny = 201', color='gold', linestyle=' ' ,marker='+', markersize=3)
-            # plt.plot(radii, bin_values_3[:, 1], label=r'$(\dot{\alpha}) |\phi|$ Bin 2, nx,ny = 201', color='purple', linestyle='--')
-            # plt.plot(radii, bin_values_3[:, 2], label=r'$(\dot{\alpha}) |\phi|$ Bin 3, nx,ny = 201', color='gold', linestyle='--')
-
-            # plt.xlabel('Radius')
-            # plt.ylabel('Bin Values')
-            # plt.title('Power Spectra contributions for Nx,Ny = 201 and 401')
-            # plt.legend()
-
-            # plt.tight_layout()
-            # plt.show()
             
-            # ----------------------------------------------------------------------------
-            # plt.plot(threshold_values, bin_values_del_alpha[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 2', color='purple', linestyle=' ' ,marker='+', markersize=3)
-            # plt.plot(threshold_values, bin_values_del_alpha[:, 2], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 3', color='gold', linestyle=' ' ,marker='+', markersize=3)
-            # plt.plot(threshold_values, bin_values_alpha_slice[:, 1], label=r'$(\dot{\alpha}) |\phi|$ Bin 2', color='purple', linestyle='--')
-            # plt.plot(threshold_values, bin_values_alpha_slice[:, 2], label=r'$(\dot{\alpha}) |\phi|$ Bin 3', color='gold', linestyle='--')
+            
+            del_alpha = (data_2d2 - data_2d1)/delta_t
+            alpha_diff_slice = alpha_t1[:, :, z_plane] - alpha_t[:, :, z_plane]
+            mask_neg_2pi_2 = np.isclose(alpha_diff_slice, -2 * np.pi, atol=tol)
+            mask_pos_2pi_2 = np.isclose(alpha_diff_slice, 2 * np.pi, atol=tol)
+            
+            alpha_diff_slice[mask_neg_2pi_2] += 2 * np.pi
+            alpha_diff_slice[mask_pos_2pi_2] -= 2 * np.pi
+            
+            mask_neg_2pi_2_ = np.isclose(alpha_diff_slice, - np.pi, atol=tol)
+            mask_pos_2pi_2_ = np.isclose(alpha_diff_slice,  np.pi, atol=tol)
+            
+            alpha_diff_slice[mask_neg_2pi_2_] +=  np.pi
+            alpha_diff_slice[mask_pos_2pi_2_] -= np.pi
+            
+            alpha_slice = alpha_diff_slice/delta_t
+            # alpha = (alpha_t1 - alpha_t)/delta_t
+            # alpha_slice = alpha[:,:,z_plane]
+            phi2_del2 = phi2t_plane * np.abs(del_alpha)**2
+            phi_del = np.sqrt(phi2_del2)
+            phi2_alpha2 = phi2t_plane * np.abs(alpha_slice)**2
+            phi_alpha = np.sqrt(phi2_alpha2)
+            
+            # ---------------------changed stuff after this point---------------------------
+            # mask = phi2t_plane < threshold
 
-            # plt.xlabel('Threshold Value')
-            # plt.ylabel('Bin Contributions')
-            # plt.title('Bin Contributions vs Threshold Value')
-            # plt.legend()
+            # # Apply the mask to the del_alpha and alpha_slice arrays
+            # del_alpha_masked = np.where(mask, 0, phi_del)
+            # alpha_slice_masked = np.where(mask, 0, phi_alpha)
 
+            # # Calculate the power spectrum for the masked arrays
+            # P_values_del_alpha = calculate_power_spectrum(del_alpha_masked, delta)
+            # P_values_alpha_slice = calculate_power_spectrum(alpha_slice_masked, delta)
+
+
+            
+            # P_values1 = calculate_power_spectrum(data_2d1, delta)
+            # P_values2 = calculate_power_spectrum(data_2d2, delta)
+            # P_values1 = calculate_power_spectrum(data_2d1, delta)
+            # P_values2 = calculate_power_spectrum(data_2d2, delta)
+            
+            P_values1 = calculate_power_spectrum(phi2t_plane, delta)
+            P_values2 = calculate_power_spectrum(phi2reft_plane, delta)
+            
+            k_values_x, k_values_y = fftfreq2D(Nx, Ny, delta, delta) 
+            mod_k = np.sqrt(k_values_x**2 + k_values_y**2)
+            
+            
+            n_values = (mod_k * Nx * delta) / (2 * np.pi) # factor of 2 is added to account for the fact that the first bin took up both n = 1 and n = 2 modes.
+            # plotting with power spectra
+            # -------------------------4 plot-version-------------------------------------------------------------
+            # fig, axs = plt.subplots(2, 2, figsize=(9, 9))  # Create a 2x2 grid of subplots
+
+            # # First plot
+            # axs[0, 0].hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+            # axs[0, 0].set_ylim([0, 0.5e-5])
+
+            # # Second plot
+            # im1 = axs[0, 1].contourf(phi_del, cmap='plasma', levels=np.linspace(0,0.02,200) ) # Fix the colorbar range to [0, 1]
+            # # axs[0, 1].set_title(r'$|\phi| \partial_i \Delta \alpha \hat{r_i}$ ')
+            # axs[0, 1].set_title(r'$|\phi| \dot{\Delta \alpha }$ ')
+
+            # # Third plot
+            # axs[1, 0].hist(x=n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+            # axs[1, 0].set_xlabel('n values')
+            # axs[1, 0].set_ylabel('Power Spectrum')
+            # axs[1, 0].set_ylim([0, 0.5e-5])
+
+            # # Fourth plot
+            # im2 = axs[1, 1].contourf(phi_alpha, cmap='plasma', levels=np.linspace(0,0.02,200) ) # Fix the colorbar range to [0, 1]
+            # axs[1, 1].set_title(r'$ |\phi| \dot{\alpha} $ ')
+            # -------------------------3 plot-version-------------------------------------------------------------
+            
+            fig, axs = plt.subplots(1, 2, figsize=(12,5))  # Create a 2x2 grid of subplots
+
+            # First plot
+
+
+            # Second plot
+            # im1 = axs[1].contourf(del_alpha_masked, cmap='plasma', levels=np.linspace(0,0.02,200) ) # Fix the colorbar range to [0, 1]
+            
+            # Flipped axis
+
+
+            
+            umin, umax = -0.05, 0.05  # Ensure the range is symmetric around 0
+            im1 = axs[0].contourf(data_2d1.T, cmap='PuOr', levels=np.linspace(umin,umax,200))
+            axs[0].set_title(r'$\hat{r}^i \mathcal{D}_i \alpha$ ')
+            # Add the colorbar
+            cbar = plt.colorbar(im1, ax=axs[1], orientation='vertical', pad=0.05)
+
+            # Define the tick positions as multiples of pi
+            tick_positions = np.linspace(umin, umax, 11)  # Adjust the number of ticks as needed
+
+
+
+            # Apply the custom tick positions and formatter
+            cbar.set_ticks(tick_positions)
+
+            
+            def custom_ticks(x, pos):
+                return f"{(x  - 100)*0.7:.1f}"
+            def custom_zoom_ticks(x, pos):
+                return f"{(x  - 25)*0.7:.1f}"
+            
+            def custom_zoom_ticks(x, pos):
+                return f"{(x - 25)*0.7:.1f}" 
+
+            # Apply the custom tick formatter to x and y axes
+            axs[0].xaxis.set_major_locator(MaxNLocator(nbins=4))
+            axs[0].yaxis.set_major_locator(MaxNLocator(nbins=4))
+            axs[0].xaxis.set_major_formatter(FuncFormatter(custom_ticks))
+            axs[0].yaxis.set_major_formatter(FuncFormatter(custom_ticks))
+            
+            # axs[0].remove()  # Remove the histogram plot
+            # axs[1].remove()
+            # divider = make_axes_locatable(axs[1])  # Create a divider for the colorbar
+            # cax = divider.append_axes("right", size="5%", pad=0.05)  # Add an axis for the colorbar
+
+            axs[0].set_xlabel(r'$x$', fontsize=14)
+            axs[0].set_ylabel(r'$y$', fontsize=14)
+            # axs[0, 1].set_title(r'$|\phi| \partial_i \Delta \alpha \hat{r_i}$ ')
+            # axs[1].set_title(r'$\mathcal{P}_{\alpha}$ ')
+            # axs[2].set_title(r'$\hat{r}^i \mathcal{D} \alpha$ ')
+            # axs[1].set_title(r'$|\phi| \dot{\Delta \alpha }$')
+            # axs[2].set_title(r'$|\phi| \dot{\alpha }$ ')
+
+            # Third plot
+            # axs[0].hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='blue', edgecolor='blue', alpha = 0.3, label = r'$|\phi| \dot{\Delta \alpha}$ ')
+            # # axs[0].hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='blue', edgecolor='blue', alpha = 0.3, label = r'$\mathcal{P}_{\alpha}$ ')
+            # axs[0].set_ylim([0, 2.5e-5])
+            # axs[0].hist(x=n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5,10.5,11), color='red', edgecolor='red', alpha = 0.1, label = r'$|\phi| \dot{\alpha}$ ')
+            # # axs[0].hist(x=n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5,10.5,11), color='red', edgecolor='red', alpha = 0.1, label = r'$\hat{r}^i \mathcal{D} \alpha$ ')
+            # axs[0].legend(fontsize=14)
+            # axs[0].set_xlabel('n values', fontsize=14)
+            # axs[0].set_ylabel('Power Spectrum', fontsize=14)
+            # axs[0].tick_params(axis='both', which='major', labelsize=14)
+            axs[0].tick_params(axis='both', which='major', labelsize=14)
+            axs[1].tick_params(axis='both', which='major', labelsize=14)
+            # axs[1, 0].set_ylim([0, 0.5e-5])
+
+            # Fourth plot
+
+            
+            vmin, vmax = -0.05, 0.05  # Ensure the range is symmetric around 0
+            im2 = axs[1].contourf(data_2d2.T, cmap='PuOr', levels=np.linspace(vmin, vmax, 200))
+
+            
+            axs[1].set_title(r'$\phi \hat{r}^i  \partial_i \Delta \alpha $')
+            # Add the colorbar
+            # cbar = plt.colorbar(im2, ax=axs[1], orientation='vertical', pad=0.05)
+
+            # Define the tick positions as multiples of pi
+            # tick_positions = np.linspace(vmin, vmax, 11)  # Adjust the number of ticks as needed
+
+            # Define a custom tick formatter for multiples of pi
+            def pi_formatter(x, pos):
+                return f"{x/np.pi:.1f}" + r"$\pi$"
+
+            # Apply the custom tick positions and formatter
+            # cbar.set_ticks(tick_positions)
+            # cbar.set_ticklabels([pi_formatter(tick, None) for tick in tick_positions])
+                        
+            axs[1].xaxis.set_major_locator(MaxNLocator(nbins=4))
+            axs[1].yaxis.set_major_locator(MaxNLocator(nbins=4))
+            axs[1].xaxis.set_major_formatter(FuncFormatter(custom_ticks))
+            axs[1].yaxis.set_major_formatter(FuncFormatter(custom_ticks))
+            # axs[0].set_xlim(5, 45)
+            # axs[0].set_ylim(5, 45)
+            # axs[1].set_xlim(5, 45)
+            # axs[1].set_ylim(5, 45)
+            axs[1].set_xlabel(r'$x$', fontsize=14)
+            axs[1].set_ylabel(r'$y$', fontsize=14)
+
+            axs[0].set_aspect('equal')
+            axs[1].set_aspect('equal')
+            # axs[1].set_title(r'$ |\phi| \dot{\alpha} $ ')
+            # cbar = fig.colorbar(im2, cax=cax)
+            # ticks=[-0.30, -0.20, -0.10, 0.00, 0.10, 0.20, 0.30 ]
+            # cbar_ax = fig.add_axes([0.92, 0.15, 0.02, 0.7])  # [left, bottom, width, height]
+            # fig.colorbar(im1, cax=cbar_ax)
+            
+            # plt.suptitle(f'Threshold Mask value : {threshold:.4f} physical spatial units')
+            # plt.suptitle(f'Radius Mask value : {(radius*0.7):.3f} physical spatial units')
+            plt.tight_layout()
+    
+            
+            # plotting without power spectra and only colorbars
+            # fig, axs = plt.subplots(2, 2, figsize=(9, 9))  # Create a 2x2 grid of subplots
+
+            # # First plot
+            # axs[0, 0].remove()  # Remove the histogram plot
+            # divider = make_axes_locatable(axs[0, 1])  # Create a divider for the colorbar
+            # cax = divider.append_axes("right", size="5%", pad=0.05)  # Add an axis for the colorbar
+            # im1 = axs[0, 1].contourf(data_2d1, cmap='PuOr', levels=np.linspace(-0.1,0.1,200))  # Create the contour plot
+            # # axs[0, 1].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ ')
+            # fig.colorbar(im1, cax=cax)  # Add colorbar to the contour plot
+
+            # # Second plot
+            # axs[1, 0].remove()  # Remove the histogram plot
+            # divider = make_axes_locatable(axs[1, 1])  # Create a divider for the colorbar
+            # cax = divider.append_axes("right", size="5%", pad=0.05)  # Add an axis for the colorbar
+            # im2 = axs[1, 1].contourf(data_2d2, cmap='PuOr', levels=np.linspace(-0.1,0.1,200))  # Create the contour plot
+            # # axs[1, 1].set_title(r'$(\dot{\alpha}) |\phi|$ ')
+            # fig.colorbar(im2, cax=cax)  # Add colorbar to the contour plot
+            # # Update the levels parameter in the contourf function to specify the desired colorbar ticks
+            # im2 = axs[1, 1].contourf(data_2d2, cmap='PuOr', levels=np.linspace(-0.1, 0.1, 200))
+            # # Set the colorbar ticks to the desired values
+            # cbar = fig.colorbar(im2, cax=cax, ticks=[0.10, 0.06, 0.02, -0.02, -0.06, -0.10])
+
+            # # plt.suptitle(f'Radius of circular mask : {radius} grid points')
             # plt.tight_layout()
-            # plt.show()
+            plt.show()
+            
 
-# --------------------------------------------------------------------------------------------------------------------------------------------------
-# def plot_power_spectrum(Nx, Ny, delta, data_3d1, data_3d2, phi2t, alpha_t,alpha_t1,custom_bins=None):
-#     for z_plane in range(data_3d1.shape[2]):
-#         x = np.arange(data_3d1.shape[0])
-#         data_2d1 = data_3d1[:, :, z_plane]
+            # Save the figure
+            # filename = "12th_z_plot_radius_{:03f}.png".format(time)
+            # frame_path = os.path.join(input_directory, filename)
+            # # plt.show()
+            # plt.savefig(frame_path)
+            
+
+#             # # Close the figure to free up memory
+            # plt.close(fig)
+#             # # # Extract histogram values for the first three bins
+#             # hist1, _ = np.histogram(n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#             # hist2, _ = np.histogram(n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#             # hist3, _ = np.histogram(n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5, 10.5, 11))
+
+#             # # # Append the first three bin values to the respective lists
+#             # bin_values_1.append(hist1[:3])
+#             # bin_values_2.append(hist2[:3])
+#             # bin_values_3.append(hist3[:3])
+            
+#                             # Extract histogram values for the first three bins
+#         #     hist_del_alpha, _ = np.histogram(n_values.ravel(), weights=P_values_del_alpha.ravel(), bins=np.linspace(0.5, 10.5, 11))
+#         #     hist_alpha_slice, _ = np.histogram(n_values.ravel(), weights=P_values_alpha_slice.ravel(), bins=np.linspace(0.5, 10.5, 11))
+
+#         # #     # Append the first three bin values to the respective lists
+#         #     bin_values_del_alpha.append(hist_del_alpha[:3])
+#         #     bin_values_alpha_slice.append(hist_alpha_slice[:3])
+            
+#         #                     # Convert lists to numpy arrays and append to the overall lists
+#         # bin_values_del_alpha_all.append(bin_values_del_alpha)
+#         # bin_values_alpha_slice_all.append(bin_values_alpha_slice)
+
+#         # Convert lists to numpy arrays for easier manipulation
+#         # bin_values_1 = np.array(bin_values_1)
+#         # bin_values_2 = np.array(bin_values_2)
+#         # bin_values_3 = np.array(bin_values_3)
+#     bin_values_del_alpha = np.array(bin_values_del_alpha)
+#     bin_values_alpha_slice = np.array(bin_values_alpha_slice)
+
+
+#     # Plotting
+
+
+#     # Plot for the first power spectrum
+
+
+#     # Plot for the first power spectrum
+#     # axs[0].plot(radii, bin_values_1[:, 0], label='Bin 1')
+#     # axs[0].plot(radii, bin_values_1[:, 1], label='Bin 2')
+#     # axs[0].plot(radii, bin_values_1[:, 2], label='Bin 3')
+#     # axs[0].set_xlabel('Radius')
+#     # axs[0].set_ylabel('Bin Values')
+#     # axs[0].set_title(r'$(\dot{\Delta \alpha}) |\phi|$ Power Spectrum')
+#     # axs[0].legend()
+
+#     # Plot for the second power spectrum
+#     # axs[1].plot(radii, bin_values_2[:, 0], label='Bin 1')
+# # Plot for the first power spectrum
+#     # bin_values_del_alpha_all = np.array(bin_values_del_alpha_all)
+#     # bin_values_alpha_slice_all = np.array(bin_values_alpha_slice_all)
+
+#     # Plotting
+#     radii = np.arange(0, 99, 1)
+
+#     # Plot for the second and third bin contributions from all z planes
+#     # fig, axs = plt.subplots(1, 2, figsize=(10, 5))
+
+#     # Plot for the second bin contributions
+#     for i in range(len(z_planes_list)):
+#         block_size = 99 # 49 for 101, 99 for 201 and so on....
         
-#         mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
-#         mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+#         # Extract data for the current z plane
+#         data_del_alpha = bin_values_del_alpha[i * block_size: (i + 1) * block_size]
+#         data_alpha_slice = bin_values_alpha_slice[i *block_size: (i + 1) * block_size]
+#         color = cmap(i / len(z_planes_list))
+
+#         # Plot the second bin contributions for the current z plane
+#         for j in range(1,2):  # Plot each column separately
+#             # axs[0].plot(radii, data_del_alpha[:, j] - data_alpha_slice[:, j], label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{\Delta \alpha}) |\phi| - (\dot{ \alpha}) |\phi|$', color=color)
+
+#             # axs[0].plot(radii*0.35, data_del_alpha[:, j], label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{\Delta \alpha}) |\phi|$', color=color)
+#             # axs[0].plot(radii*0.35, data_alpha_slice[:, j], linestyle='--', label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{ \alpha}) |\phi|$', color=color)
+#             np.savetxt(f"{input_directory}201_data_del_alpha_{j}.txt", data_del_alpha[:,j])
+#             np.savetxt(f"{input_directory}201_data_alpha_slice_{j}.txt", data_alpha_slice[:,j])
         
-#         data_2d1[mask_neg_2pi_1] += 2 * np.pi
-#         data_2d1[mask_pos_2pi_1] -= 2 * np.pi
-        
-#         mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
-#         mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
-        
-#         data_2d1[mask_neg_2pi_1_] +=  np.pi
-#         data_2d1[mask_pos_2pi_1_] -= np.pi
-        
-#         # line1 = cos1(x)
-#         # line2 = cos2(x)
-        # Nx, Ny = data_3d1.shape[0], data_3d1.shape[1]
+#         for j in range(2,3):  # Plot each column separately
+#             # axs[0].plot(radii, data_del_alpha[:, j] - data_alpha_slice[:, j], label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{\Delta \alpha}) |\phi| - (\dot{ \alpha}) |\phi|$', color=color)
 
-        # # Create a 2D grid of x values
-        # x_grid = np.tile(np.arange(Nx), (Ny, 1))
+#             # axs[0].plot(radii*0.35, data_del_alpha[:, j], label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{\Delta \alpha}) |\phi|$', color=color)
+#             # axs[0].plot(radii*0.35, data_alpha_slice[:, j], linestyle='--', label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{ \alpha}) |\phi|$', color=color)
+#             np.savetxt(f"{input_directory}201_data_del_alpha_{j}.txt", data_del_alpha[:,j])
+#             np.savetxt(f"{input_directory}201_data_alpha_slice_{j}.txt", data_alpha_slice[:,j])
 
-        # # Calculate line1 and line2 for all y values
-        # line1_2d = cos1(x_grid)
-        # line2_2d = cos2(x_grid)
-        # line3_2d = cos3(x_grid)
-        # line4_2d = cos4(x_grid)
-        # line5_2d = cos5(x_grid)
-        # line6_2d = cos6(x_grid)
-#         y_index = 125  # The y index for which you want to plot the data
+#     # axs[0].set_xlabel('Radius')
+#     # axs[0].set_ylabel('Bin Values')
+#     # axs[0].set_title('Second Bin Contributions for 201 grid')
+#     # axs[0].legend()
 
-# #         plt.figure(figsize=(10, 6))
+#     # Plot for the third bin contributions
+#     for i in range(len(z_planes_list)):
+#         # Extract data for the current z plane
+#         data_del_alpha = bin_values_del_alpha[i * block_size: (i + 1) * block_size]
+#         data_alpha_slice = bin_values_alpha_slice[i * block_size: (i + 1) * block_size]
 
-# # # Loop over the z slices
-# #         for z in range(1, data_3d1.shape[2], 5):
-# #             # Extract the data for y=125 for the current z slice
-# #             data_2d1 = data_3d1[:, y_index, z]
+#         color = cmap(i / len(z_planes_list))
 
-# #             # Apply phase correction
-# #             mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
-# #             mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+#         # Plot the third bin contributions for the current z plane
+#         for j in range(0,1):  # Plot each column separately
+#             # axs[1].plot(radii, data_del_alpha[:, j] - data_alpha_slice[:, j], label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{\Delta \alpha}) |\phi| - (\dot{ \alpha}) |\phi|$', color=color)
 
-# #             data_2d1[mask_neg_2pi_1] += 2 * np.pi
-# #             data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+#             # axs[1].plot(radii*0.35, data_del_alpha[:, j], label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{\Delta \alpha}) |\phi|$', color=color)
+#             # axs[1].plot(radii*0.35, data_alpha_slice[:, j], linestyle='--', label=f'Z Plane {z_planes_list[i]} ' + r'$(\dot{ \alpha}) |\phi|$', color=color)
+#             np.savetxt(f"{input_directory}201_data_del_alpha_{j}.txt", data_del_alpha[:,j])
+#             np.savetxt(f"{input_directory}201_data_alpha_slice_{j}.txt", data_alpha_slice[:,j])
 
-# #             mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
-# #             mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+#     # axs[1].set_xlabel('Radius')
+#     # axs[1].set_ylabel('Bin Values')
+#     # axs[1].set_title('First Bin Contributions for 201 grid')
+#     # axs[1].legend()
 
-# #             data_2d1[mask_neg_2pi_1_] +=  np.pi
-# #             data_2d1[mask_pos_2pi_1_] -= np.pi
-# #             x = np.arange(data_3d1.shape[0])
-# #             # Plot the data against x
-# #             plt.plot(x, data_2d1, label=f'z={z}')
+#     # plt.tight_layout()
+#     # plt.show()
+            
+#             # ---------------------plotting code for radii varying across two simulations---------------------------
+            
+#             # data_loaded = np.loadtxt("/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/relevant_files_060224/2000+/npy_files_full_positive_boost_ev_1/4_column_bin_contributions_401.txt")
 
-# #         plt.plot(x, line1, color='red', linestyle='--', marker='o', label='cos(4 pi x / L)')
-# #         plt.plot(x, line2, color='blue', linestyle=':', marker='x', label='cos(8 pi x / L)')
-# #         plt.xlabel('x')
-# #         plt.ylabel('delta alpha')
-# #         plt.legend()
-# #         plt.show()
+#             # # Create a new radii array for the loaded data
+#             # radii_loaded = np.arange(0, 199, 1)
 
-#         data_2d2 = data_3d2[:, :, z_plane]
-        
-#         mask_neg_2pi_2 = np.isclose(data_2d2, -2 * np.pi, atol=tol)
-#         mask_pos_2pi_2 = np.isclose(data_2d2, 2 * np.pi, atol=tol)
-        
-#         data_2d2[mask_neg_2pi_2] += 2 * np.pi
-#         data_2d2[mask_pos_2pi_2] -= 2 * np.pi
-        
-#         mask_neg_2pi_2_ = np.isclose(data_2d2, - np.pi, atol=tol)
-#         mask_pos_2pi_2_ = np.isclose(data_2d2,  np.pi, atol=tol)
-        
-#         data_2d2[mask_neg_2pi_2_] +=  np.pi
-#         data_2d2[mask_pos_2pi_2_] -= np.pi
-        
-        
-        
-        
-#         phi2t_plane = phi2t[:, :, z_plane]
-        
-#         # phase_corrected = np.where(np.abs(data_2d) > 2*np.pi, data_2d - 2*np.pi*np.sign(data_2d), data_2d)
-#         # data_2d = np.where(np.abs(phase_corrected) > np.pi, phase_corrected + np.pi*np.sign(phase_corrected), phase_corrected)
+#             # # Plot the loaded data
+#             # plt.plot(radii_loaded, data_loaded[:, 0], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 2, nx,ny = 401', color='purple', linestyle=' ', marker='o', markersize=3)
+#             # plt.plot(radii_loaded, data_loaded[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 3, nx,ny = 401', color='gold', linestyle=' ',marker='o', markersize=3)
+#             # plt.plot(radii_loaded, data_loaded[:, 2], label=r'$(\dot{\alpha}) |\phi|$ Bin 2, nx,ny = 401', color='purple', linestyle='-' )
+#             # plt.plot(radii_loaded, data_loaded[:, 3], label=r'$(\dot{\alpha}) |\phi|$ Bin 3, nx,ny = 401', color='gold', linestyle='-')
 
-#         data_2d1 = np.where(circular_mask, 0, data_2d1)
-#         data_2d2 = np.where(circular_mask, 0, data_2d2)
-#         phi2t_plane = np.where(circular_mask, 0, phi2t_plane)
-        
-        
-#         del_alpha = (data_2d2 - data_2d1)/delta_t
-#         phi2_del2 = phi2t_plane * np.abs(del_alpha)**2
-        
-        
-        # P_values1 = calculate_power_spectrum(line1_2d, delta)
-        # P_values2 = calculate_power_spectrum(line2_2d, delta)
-        # P_values3 = calculate_power_spectrum(line3_2d, delta)
-        # P_values4 = calculate_power_spectrum(line4_2d, delta)
-        # P_values5 = calculate_power_spectrum(line5_2d, delta)
-        # P_values6 = calculate_power_spectrum(line6_2d, delta)
-        
-#         # Calculate the Fourier transform
-        
+#             # # # Plot the current data
+#             # plt.plot(radii, bin_values_2[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 2, nx,ny = 201', color='purple', linestyle=' ' ,marker='+', markersize=3)
+#             # plt.plot(radii, bin_values_2[:, 2], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 3, nx,ny = 201', color='gold', linestyle=' ' ,marker='+', markersize=3)
+#             # plt.plot(radii, bin_values_3[:, 1], label=r'$(\dot{\alpha}) |\phi|$ Bin 2, nx,ny = 201', color='purple', linestyle='--')
+#             # plt.plot(radii, bin_values_3[:, 2], label=r'$(\dot{\alpha}) |\phi|$ Bin 3, nx,ny = 201', color='gold', linestyle='--')
 
+#             # plt.xlabel('Radius')
+#             # plt.ylabel('Bin Values')
+#             # plt.title('Power Spectra contributions for Nx,Ny = 201 and 401')
+#             # plt.legend()
 
-#         beta1, beta2 = np.meshgrid(np.arange(Nx), np.arange(Ny), indexing='ij')
-#         beta1_flat = beta1.ravel()
-#         beta2_flat = beta2.ravel()
+#             # plt.tight_layout()
+#             # plt.show()
+            
+#             # ----------------------------------------------------------------------------
+#             # plt.plot(threshold_values, bin_values_del_alpha[:, 1], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 2', color='purple', linestyle=' ' ,marker='+', markersize=3)
+#             # plt.plot(threshold_values, bin_values_del_alpha[:, 2], label=r'$(\dot{\Delta \alpha}) |\phi|$ Bin 3', color='gold', linestyle=' ' ,marker='+', markersize=3)
+#             # plt.plot(threshold_values, bin_values_alpha_slice[:, 1], label=r'$(\dot{\alpha}) |\phi|$ Bin 2', color='purple', linestyle='--')
+#             # plt.plot(threshold_values, bin_values_alpha_slice[:, 2], label=r'$(\dot{\alpha}) |\phi|$ Bin 3', color='gold', linestyle='--')
 
-#         # k_values = np.sqrt((2 * np.pi * beta1_flat) / (Nx * delta))**2 + \
-#         #            np.sqrt((2 * np.pi * beta2_flat) / (Ny * delta))**2
-#         k_values_x, k_values_y = fftfreq2D(Nx, Ny, delta, delta) 
-#         mod_k = np.sqrt(k_values_x**2 + k_values_y**2)
+#             # plt.xlabel('Threshold Value')
+#             # plt.ylabel('Bin Contributions')
+#             # plt.title('Bin Contributions vs Threshold Value')
+#             # plt.legend()
 
-#         n_values = (mod_k * Nx * delta) / (4 * np.pi)
-        
-#         F_values1 = calculate_fourier_transform(line1_2d, delta)
-#         F_values2 = calculate_fourier_transform(line2_2d, delta)
-#         F_values3 = calculate_fourier_transform(line3_2d, delta)
-#         F_values4 = calculate_fourier_transform(line4_2d, delta)
-#         F_values5 = calculate_fourier_transform(line5_2d, delta)
+#             # plt.tight_layout()
+#             # plt.show()
 
-#         # Create a 2D grid
-#         nx, ny = n_values.shape
-# # Create a 2D grid for each Fourier transform
-#         fig, axs = plt.subplots(1, 5, figsize=(15, 3))
-
-#         # Plot the Fourier transform values
-#         axs[0].imshow(np.abs(F_values1), cmap='hot')
-#         axs[0].set_title('4')
-#         axs[1].imshow(np.abs(F_values2), cmap='hot')
-#         axs[1].set_title('8')
-#         axs[2].imshow(np.abs(F_values3), cmap='hot')
-#         axs[2].set_title('16')
-#         axs[3].imshow(np.abs(F_values4), cmap='hot')
-#         axs[3].set_title('32')
-#         axs[4].imshow(np.abs(F_values5), cmap='hot')
-#         axs[4].set_title('64')
-
-#         plt.show()
-
-
-        
-#         # logic1 = (n_values > 0.5) & (n_values<1.5)
-#         # logic12= (n_values > 1.5) & (n_values<2.5)
-
-#         # print(np.sum(P_values[logic1]), np.sum(P_values[logic12]))
-
-
-        # plt.figure(figsize=(15, 10))
-
-        # # Plot the first histogram
-        # plt.subplot(2, 3, 1)
-        # plt.hist(x=n_values.ravel(), weights=P_values1.ravel(), bins=np.linspace(0.5,10.5,11), color='yellow', edgecolor='black', alpha=0.5)
-        # plt.xlabel('n values')
-        # plt.ylabel('Power Spectrum')
-        # plt.title('cos(4 pi x / L)')
-
-        # # Plot the second histogram
-        # plt.subplot(2, 3, 2)
-        # plt.hist(x=n_values.ravel(), weights=P_values2.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black', alpha=0.5)
-        # plt.xlabel('n values')
-        # plt.ylabel('Power Spectrum')
-        # plt.title('cos(8 pi x / L)')
-
-        # # Plot the third histogram
-        # plt.subplot(2, 3, 3)
-        # plt.hist(x=n_values.ravel(), weights=P_values3.ravel(), bins=np.linspace(0.5,10.5,11), color='pink', edgecolor='black', alpha=0.5)
-        # plt.xlabel('n values')
-        # plt.ylabel('Power Spectrum')
-        # plt.title('cos(16 pi x / L)')
-
-        # # Plot the fourth histogram
-        # plt.subplot(2, 3, 4)
-        # plt.hist(x=n_values.ravel(), weights=P_values4.ravel(), bins=np.linspace(0.5,10.5,11), color='blue', edgecolor='black', alpha=0.5)
-        # plt.xlabel('n values')
-        # plt.ylabel('Power Spectrum')
-        # plt.title('cos(32 pi x / L)')
-
-        # # Plot the fifth histogram
-        # plt.subplot(2, 3, 6)
-        # plt.hist(x=n_values.ravel(), weights=P_values5.ravel(), bins=np.linspace(0.5,10.5,11), color='green', edgecolor='black', alpha=0.5)
-        # plt.xlabel('n values')
-        # plt.ylabel('Power Spectrum')
-        # plt.title('cos(64 pi x / L)')
-
-        # # Plot the sixth histogram
-        # # plt.subplot(2, 3, 6)
-        # # plt.hist(x=n_values.ravel(), weights=P_values6.ravel(), bins=np.linspace(0.5,10.5,11), color='red', edgecolor='black', alpha=0.5)
-        # # plt.xlabel('n values')
-        # # plt.ylabel('Power Spectrum')
-        # # plt.title('cos(128 pi x / L)')
-
-        # plt.tight_layout()
-
-        # power_path = os.path.join(input_directory, f"power_spec_xy_plane_{z_plane + 1}.png")
-        # # plt.savefig(power_path, dpi=300)
-        # plt.show()
-
+# --------------------------------------------------------------------------------------------------
 
 def apply_circular_mask(data_3d, radius):
     Nx, Ny, Nz = data_3d.shape
@@ -1058,8 +1869,8 @@ def apply_circular_mask(data_3d, radius):
     masked_data_3d = np.stack(masked_slices, axis=2)
     return masked_data_3d
 
-def calculate_power_spectrum_3d(data_3d, delta):
-    # masked_data_3d = apply_circular_mask(data_3d, radius)  # Apply circular mask
+def calculate_power_spectrum_3d(data_3d, delta, radius):
+    masked_data_3d = apply_circular_mask(data_3d, radius)  # Apply circular mask
     masked_data_3d = data_3d
     mask_neg_2pi = np.isclose(masked_data_3d, -2 * np.pi, atol=tol)
     mask_pos_2pi = np.isclose(masked_data_3d, 2 * np.pi, atol=tol)
@@ -1078,12 +1889,70 @@ def calculate_power_spectrum_3d(data_3d, delta):
     power_spectrum_3d = np.abs(F_tilde_shifted)**2 / masked_data_3d.size
     return power_spectrum_3d
 
-def plot_and_save_power_spectra_3d(data_3d, delta, input_directory):
+def calculate_power_spectrum_3d_for_phi_masked_quantities(data_3d1, data_3d2, alpha_t, alpha_t1, mod_phi, delta, radius):
+    masked_data_3d = apply_circular_mask(data_3d1, radius)  # Apply circular mask
+    masked_data_3d = data_3d1
+    mask_neg_2pi = np.isclose(masked_data_3d, -2 * np.pi, atol=tol)
+    mask_pos_2pi = np.isclose(masked_data_3d, 2 * np.pi, atol=tol)
+    
+    masked_data_3d[mask_neg_2pi] += 2 * np.pi
+    masked_data_3d[mask_pos_2pi] -= 2 * np.pi
+    
+    mask_neg_2pi = np.isclose(masked_data_3d, - np.pi, atol=tol)
+    mask_pos_2pi = np.isclose(masked_data_3d,  np.pi, atol=tol)
+    
+    masked_data_3d[mask_neg_2pi] +=  np.pi
+    masked_data_3d[mask_pos_2pi] -= np.pi
+    
+    masked_data_3d2 = apply_circular_mask(data_3d2, radius)  # Apply circular mask
+    masked_data_3d2 = data_3d2
+    mask_neg_2pi = np.isclose(masked_data_3d2, -2 * np.pi, atol=tol)
+    mask_pos_2pi = np.isclose(masked_data_3d2, 2 * np.pi, atol=tol)
+    
+    masked_data_3d2[mask_neg_2pi] += 2 * np.pi
+    masked_data_3d2[mask_pos_2pi] -= 2 * np.pi
+    
+    mask_neg_2pi = np.isclose(masked_data_3d2, - np.pi, atol=tol)
+    mask_pos_2pi = np.isclose(masked_data_3d2,  np.pi, atol=tol)
+    
+    masked_data_3d2[mask_neg_2pi] +=  np.pi
+    masked_data_3d2[mask_pos_2pi] -= np.pi
+    
+    del_alpha = (masked_data_3d - masked_data_3d2)/delta_t
+    
+    alpha_t = apply_circular_mask(alpha_t, radius)  # Apply circular mask
+    alpha_t1 = apply_circular_mask(alpha_t1, radius)  # Apply circular mask
+    mod_phi = apply_circular_mask(mod_phi, radius)  # Apply circular mask
+    alpha = (alpha_t1 - alpha_t)/delta_t
+
+    phi2_del2 = mod_phi * np.abs(del_alpha)**2
+    phi_del = np.sqrt(phi2_del2)
+    phi2_alpha2 = mod_phi * np.abs(alpha)**2
+    phi_alpha = np.sqrt(phi2_alpha2)
+    
+    
+    F_tilde1 = np.fft.fftn(phi_del[:,:,1:100]) / np.sqrt(phi_del.size)
+    F_tilde_shifted1 = np.fft.fftshift(F_tilde1)
+    power_spectrum_3d1 = np.abs(F_tilde_shifted1)**2 / phi_del.size
+    
+    F_tilde2 = np.fft.fftn(phi_alpha[:,:,1:100]) / np.sqrt(phi_alpha.size)
+    F_tilde_shifted2 = np.fft.fftshift(F_tilde2)
+    power_spectrum_3d2 = np.abs(F_tilde_shifted2)**2 / phi_alpha.size
+    return power_spectrum_3d1, power_spectrum_3d2
+
+
+def plot_and_save_power_spectra_3d(data_3d, data_3d2, alpha_t, alpha_t1, mod_phi, delta, input_directory):
     Nx = 101
     Ny = 101
     Nz = 101
+    bin_values_del_alpha = []
+    bin_values_alpha_slice = []
+    bin_values_del_alpha_all = []
+    bin_values_alpha_slice_all = []
     for radius in range(0, 49):
-        power_spectrum_3d = calculate_power_spectrum_3d(data_3d, delta, radius)
+        # power_spectrum_3d = calculate_power_spectrum_3d(data_3d, delta, radius)
+        power_spectrum_3d1, power_spectrum_3d2 = calculate_power_spectrum_3d_for_phi_masked_quantities(data_3d, data_3d2, alpha_t, alpha_t1, mod_phi, delta, radius)
+        
         freq_x = np.fft.fftshift(np.fft.fftfreq(Nx, delta)) * 2 * np.pi
         freq_y = np.fft.fftshift(np.fft.fftfreq(Ny, delta)) * 2 * np.pi
         freq_z = np.fft.fftshift(np.fft.fftfreq(Nz, delta)) * 2 * np.pi
@@ -1093,25 +1962,60 @@ def plot_and_save_power_spectra_3d(data_3d, delta, input_directory):
         k_modulus = np.sqrt(k_x**2 + k_y**2 + k_z**2)
 
         L = Nx * delta
-        n_values = k_modulus * L / (4*np.pi)
+        n_values = k_modulus * L / (2*np.pi)
+        n_values = n_values[:,:,1:100]
+        # fig, ax = plt.subplots(figsize=(8, 6))
+        # hist = ax.hist(x=n_values.ravel(), weights=power_spectrum_3d.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+        # ax.set_title(f'3D Power Spectrum for radius: {radius} grid points')
+        # ax.set_xlabel('n values')
+        # ax.set_ylabel('Power Spectrum')
+        # # ax.set_ylim([0, 2e-5])
+        # ax.legend()
+        # ax.grid(True)
+        # plt.tight_layout()
+        # plt.show()
+        
+        fig, axs = plt.subplots(1, 2, figsize=(10, 5))  # Create a 2x2 grid of subplots
 
-        fig, ax = plt.subplots(figsize=(8, 6))
-        hist = ax.hist(x=n_values.ravel(), weights=power_spectrum_3d.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
-        ax.set_title(f'3D Power Spectrum for radius: {radius} grid points')
-        ax.set_xlabel('n values')
-        ax.set_ylabel('Power Spectrum')
-        ax.set_ylim([0, 2e-5])
-        ax.legend()
-        ax.grid(True)
+        # First plot
+        axs[0].hist(x=n_values.ravel(), weights=power_spectrum_3d1.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+        axs[0].set_ylim([0, 0.5e-5])
+        axs[0].set_xlabel('n values')
+        axs[0].set_ylabel(r'3D Power Spectrum for $(\dot{\Delta \alpha}) |\phi|$')
+
+        # Third plot
+        axs[1].hist(x=n_values.ravel(), weights=power_spectrum_3d2.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
+        axs[1].set_xlabel('n values')
+        axs[1].set_ylabel(r'3D Power Spectrum for $(\dot{\alpha}) |\phi|$')
+        axs[1].set_ylim([0, 0.5e-5])
+
+        plt.figtext(0.5, 0.01, f'Mask radius :{radius * 0.35:.4f} physical spatial units', ha='center', va='bottom')
         plt.tight_layout()
+        # plt.show()
 
         # Save the figure
-        filename = f"3D_power_spectrum_radius_Nx_{radius:03d}.png"
+        filename = f"3D_power_spectrum_radius_{radius:03d}.png"
         frame_path = os.path.join(input_directory, filename)
         plt.savefig(frame_path)
 
         # Close the figure to free up memory
         plt.close(fig)
+        
+                                    # Extract histogram values for the first three bins
+    #     hist_del_alpha, _ = np.histogram(n_values.ravel(), weights=power_spectrum_3d.ravel(), bins=np.linspace(0.5, 10.5, 11))
+       
+    #     # Append the first three bin values to the respective lists
+    #     bin_values_del_alpha.append(hist_del_alpha[:3])
+
+            
+    # bin_values_del_alpha_all.append(bin_values_del_alpha)
+
+
+
+    # bin_values_del_alpha = np.array(bin_values_del_alpha)
+
+    # bin_values_del_alpha_all = np.array(bin_values_del_alpha_all)
+
 
 def plot_3d_power_spectrum(power_spectrum_3d, delta):
     freq_x = np.fft.fftshift(np.fft.fftfreq(power_spectrum_3d.shape[0], delta))  * 2 * np.pi
@@ -1131,12 +2035,12 @@ def plot_3d_power_spectrum(power_spectrum_3d, delta):
 
     # Calculate n values
     L = Nx * delta
-    n_values = k_modulus * L / ( 1*np.pi)
+    n_values = k_modulus * L / ( 2*np.pi)
     # n_values_ = k_modulus_ * L / (2 * np.pi)
 
     # Plot the power spectrum against n values
     plt.figure(figsize=(8, 6))
-    hist = plt.hist(x=n_values.ravel(), weights=power_spectrum_3d.ravel(), bins=np.linspace(0.5,80.5,81), color='purple', edgecolor='black')
+    hist = plt.hist(x=n_values.ravel(), weights=power_spectrum_3d.ravel(), bins=np.linspace(0.5,10.5,11), color='purple', edgecolor='black')
     # plt.figure(figsize=(8, 6))
     # hist_ = plt.hist(x=n_values_.ravel(), weights=power_spectrum_3d.ravel(), bins=np.linspace(0.05,4.5,11), color='skyblue', edgecolor='black')
     plt.title('3D Power Spectrum for length scale associated with nz = 51')
@@ -1193,14 +2097,18 @@ def cos6(x):
     
 
 # Specify your directory!
-input_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/sem_2_xy_abs_z_fix_101/npy_files_full_positive_boost_ev_1/"
+# input_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/to_scp_120324_201_all/npy_files_full_positive_boost_ev_1/"
+# input_ref_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/to_scp_120324_201_all/npy_files_full_positive_boost_ev_1/"
 
+input_directory = "/Volumes/Recent_Archives/P_files_he/npy_files/"
+input_ref_directory = "/Volumes/Recent_Archives/P_files_he/npy_files/"
 
-Nx = 101
-Ny = 101
-Nz = 101
+Nx = 201
+Ny = 201
+Nz = 201
 delta = 0.7
 delta_t = 0.3
+tol = 0.005
 
 y, x = np.ogrid[-50:51, -50:51]
 
@@ -1215,128 +2123,262 @@ circular_mask = x**2 + y**2 < 70**2
 # if user_input.lower() == "yes":
 #     for frame_t in range(320,335):
 
-frame_t = 2751 
-frame_t1 = frame_t + 1
+# frame_t = 150 
+# frame_t1 = frame_t + 1
+frame_range = range(330, 351)
 
-# Load data from .npy file
-data_real_t = np.load(os.path.join(input_directory, f'col_0_frame_{frame_t}.npy'))
-data_im_t = np.load(os.path.join(input_directory, f'col_1_frame_{frame_t}.npy'))
-data_real_t1 = np.load(os.path.join(input_directory, f'col_0_frame_{frame_t1}.npy'))
-data_im_t1 = np.load(os.path.join(input_directory, f'col_1_frame_{frame_t1}.npy'))
+for frame_t in frame_range:
+    frame_t1 = frame_t + 1
 
-# Reference file
-data_real_ref_t = np.load(os.path.join(input_directory, f'frame_{frame_t}_positive_boost_0.npy'))
-data_real_ref_t1 = np.load(os.path.join(input_directory, f'frame_{frame_t1}_positive_boost_0.npy'))
+    # Load data from .npy file
+    data_real_t = np.load(os.path.join(input_directory, f'col_0_frame_{frame_t}.npy'))
+    data_im_t = np.load(os.path.join(input_directory, f'col_1_frame_{frame_t}.npy'))
+    data_real_t1 = np.load(os.path.join(input_directory, f'col_0_frame_{frame_t1}.npy'))
+    data_im_t1 = np.load(os.path.join(input_directory, f'col_1_frame_{frame_t1}.npy'))
 
-data_im_ref_t = np.load(os.path.join(input_directory, f'frame_{frame_t}_positive_boost_1.npy'))
-data_im_ref_t1 = np.load(os.path.join(input_directory, f'frame_{frame_t1}_positive_boost_1.npy'))
+    print("First set of data loaded")
+    # test stationary file
+    # data_real_test = np.load(os.path.join(input_directory, f'col_0_frame_1.npy'))
+    # data_im_test = np.load(os.path.join(input_directory, f'col_1_frame_1.npy'))
+    # complex_number_test = data_real_test + 1j * data_im_test
+    # mod_test = np.abs((data_real_test)**2 + (data_im_test)**2)
 
-complex_number_t = data_real_t + 1j * data_im_t
-complex_number_ref_t = data_real_ref_t + 1j * data_im_ref_t
-complex_conjugate_ref_t = data_real_ref_t - 1j * data_im_ref_t
-new = complex_number_t * complex_conjugate_ref_t
+    # Reference file
+    data_real_ref_t = np.load(os.path.join(input_ref_directory, f'frame_{frame_t}_positive_boost_0.npy'))
+    data_real_ref_t1 = np.load(os.path.join(input_ref_directory, f'frame_{frame_t1}_positive_boost_0.npy'))
 
-complex_number_t1 = data_real_t1 + 1j * data_im_t1
-complex_number_ref_t1 = data_real_ref_t1 + 1j * data_im_ref_t1
-# comp_num = complex_number - complex_number_ref
-# # Assuming your grid is already in the right shape
-# y_grid, x_grid, z_grid = np.meshgrid(np.arange(N), np.arange(N), np.arange(N))
-mod_t_squared = np.abs((data_real_t)**2 + (data_im_t)**2)**2
-mod_t = np.abs((data_real_t)**2 + (data_im_t)**2)
-mod_t1_squared = np.abs((data_real_t1)**2 + (data_im_t1)**2)**2
+    data_im_ref_t = np.load(os.path.join(input_ref_directory, f'frame_{frame_t}_positive_boost_1.npy'))
+    data_im_ref_t1 = np.load(os.path.join(input_ref_directory, f'frame_{frame_t1}_positive_boost_1.npy'))
+    print("Second set of data loaded")
+    complex_number_t = data_real_t + 1j * data_im_t
+    complex_number_ref_t = data_real_ref_t + 1j * data_im_ref_t
+    # complex_conjugate_ref_t = data_real_ref_t - 1j * data_im_ref_t
+    # new = complex_number_t * complex_conjugate_ref_t
 
-phi_phase_ref_t = np.angle(complex_number_ref_t)
+    complex_number_t1 = data_real_t1 + 1j * data_im_t1
+    complex_number_ref_t1 = data_real_ref_t1 + 1j * data_im_ref_t1
+    print("complex numbers defined")
+    # comp_num = complex_number - complex_number_ref
+    # # Assuming your grid is already in the right shape
+    # y_grid, x_grid, z_grid = np.meshgrid(np.arange(N), np.arange(N), np.arange(N))
+    mod_t_squared = np.abs((data_real_t)**2 + (data_im_t)**2)**2
+    
+    
+    mod_t = ((data_real_t)**2 + (data_im_t)**2)**0.5
+    mod_ref_t = ((data_real_ref_t)**2 + (data_im_ref_t)**2)**0.5
+    
+    
+    mod_t1_squared = np.abs((data_real_t1)**2 + (data_im_t1)**2)**2
 
-phi_phase_ref_t1 = np.angle(complex_number_ref_t1)
-# data_3d = phi_phase
-# # Set the parameters
+    phi_phase_ref_t = np.angle(complex_number_ref_t)
 
+    phi_phase_ref_t1 = np.angle(complex_number_ref_t1)
+    # data_3d = phi_phase
+    # # Set the parameters
 
-# Assuming your grid is already in the right shape
-y_grid, x_grid, z_grid = np.meshgrid(np.arange(Ny), np.arange(Nx), np.arange(data_real_t.shape[2]))
+    print("phases calculated")
+    # Assuming your grid is already in the right shape
+    y_grid, x_grid, z_grid = np.meshgrid(np.arange(Ny), np.arange(Nx), np.arange(data_real_t.shape[2]))
+    print("meshgrid created")
+    phi_phase_t = np.angle(complex_number_t)
+    phase_t = phi_phase_t - phi_phase_ref_t
+    phi_phase_t1 = np.angle(complex_number_t1)
+    phase_t1 = phi_phase_t1 - phi_phase_ref_t1
 
-phi_phase_t = np.angle(complex_number_t)
-phase_t = phi_phase_t - phi_phase_ref_t
-phi_phase_t1 = np.angle(complex_number_t1)
-phase_t1 = phi_phase_t1 - phi_phase_ref_t1
+    delta_alpha = (phase_t1 - phase_t)/delta_t
+    # phase_multiplied = np.angle(new)
+    # Set the parameters for the Fourier Transform
 
-delta_alpha = (phase_t1 - phase_t)/delta_t
-phase_multiplied = np.angle(new)
-# Set the parameters for the Fourier Transform
-
-tol = 0.005
-z_slice_to_plot = 0  # Adjust as needed
-
-# diagnostic_t = (data_real_t * np.gradient * data_real_t + data_im_t * np.gradient * data_im_t)/(mod_t) 
-
-grad_x_real_t = (np.roll(data_real_t, -1, axis=1) - np.roll(data_real_t, 1, axis=1)) / (2 * delta)
-grad_x_im_t = (np.roll(data_im_t, -1, axis=1) - np.roll(data_im_t, 1, axis=1)) / (2 * delta)
-
-grad_y_real_t = (np.roll(data_real_t, -1, axis=0) - np.roll(data_real_t, 1, axis=0)) / (2 * delta)
-grad_y_im_t = (np.roll(data_im_t, -1, axis=0) - np.roll(data_im_t, 1, axis=0)) / (2 * delta)
-
-
-grad_z_real_t = (np.roll(data_real_t, -1, axis=2) - np.roll(data_real_t, 1, axis=2)) / (2 * delta)
-grad_z_im_t = (np.roll(data_im_t, -1, axis=2) - np.roll(data_im_t, 1, axis=2)) / (2 * delta)
-
-D_x_alpha = (data_real_t * grad_x_im_t - data_im_t * grad_x_real_t)/(mod_t) 
-D_y_alpha = (data_real_t * grad_y_im_t - data_im_t * grad_y_real_t)/(mod_t) 
-D_z_alpha = (data_real_t * grad_z_im_t - data_im_t * grad_z_real_t)/(mod_t) 
-
-
-# Define the center point (I_0, J_0, K_0)
-I_0 = Nx // 2  # Assuming Nx, Ny, Nz are the dimensions of your grid
-J_0 = Ny // 2
-K_0 = Nz // 2
-
-# Define the grid spacing along each dimension
-delta_x = 0.7 
-delta_y = 0.7
-delta_z = 0.7
-
-# Compute the coordinates relative to the center point
-I_relative = np.arange(Nx) - I_0
-J_relative = np.arange(Ny) - J_0
-K_relative = np.arange(Nz) - K_0
-
-# Create 3D grids of relative coordinates
-I_grid, J_grid, K_grid = np.meshgrid(I_relative, J_relative, K_relative, indexing='ij')
-
-# Compute the radial vector components
-radial_vector_x = I_grid * delta_x
-radial_vector_y = J_grid * delta_y
-radial_vector_z = 0
-
-# Compute the magnitude of the radial vector
-magnitude_r = np.sqrt(radial_vector_x**2 + radial_vector_y**2 + radial_vector_z**2)
-
-# Compute the unit vector components
-unit_vector_x = radial_vector_x / magnitude_r
-unit_vector_y = radial_vector_y / magnitude_r
-unit_vector_z = radial_vector_z / magnitude_r
-
-# Compute the dot product of D with the components of the unit vector
-D_dot_unit_x = D_x_alpha * unit_vector_x
-D_dot_unit_y = D_y_alpha * unit_vector_y
-D_dot_unit_z = D_z_alpha * unit_vector_z
+    tol = 0.005
+    z_slice_to_plot = 0  # Adjust as needed
+    print("plotting about to start")
+    
+    # np.save(os.path.join(input_directory, 'phase_t.npy'), phase_t)
+    # np.save(os.path.join(input_directory, 'phase_t1.npy'), phase_t1)
+    # np.save(os.path.join(input_directory, 'mod_t.npy'), mod_t)
+    # np.save(os.path.join(input_directory, 'phi_phase_t.npy'), np.abs(phi_phase_t))
+    # np.save(os.path.join(input_directory, 'phi_phase_t1.npy'), np.abs(phi_phase_t1))
+    
+    
+# --------------------------------load the files--------------------------------------------
+    # phase_t = np.load(os.path.join(input_directory, 'phase_t.npy'))
+    # phase_t1 = np.load(os.path.join(input_directory, 'phase_t1.npy'))
+    # mod_t = np.load(os.path.join(input_directory, 'mod_t.npy'))
+    # phi_phase_t = np.load(os.path.join(input_directory, 'phi_phase_t.npy'))
+    # phi_phase_t1 = np.load(os.path.join(input_directory, 'phi_phase_t1.npy'))
 
 
-scalar_projection = D_dot_unit_x + D_dot_unit_y + D_dot_unit_z
-# Extract the specific z-slice from the 3D array
-phase_slice1 = phase_t[:,:,z_slice_to_plot]
-phase_slice = phase_t1[:,:,z_slice_to_plot]
+    # diagnostic_t = (data_real_t * np.gradient * data_real_t + data_im_t * np.gradient * data_im_t)/(mod_t) 
+# ---------------------------------- uncomment after trying the 401 loading--------------------------------------------------
+    grad_x_real_t = (np.roll(data_real_t, -1, axis=0) - np.roll(data_real_t, 1, axis=0)) / (2 * delta)
+    grad_x_im_t = (np.roll(data_im_t, -1, axis=0) - np.roll(data_im_t, 1, axis=0)) / (2 * delta)
+
+    grad_y_real_t = (np.roll(data_real_t, -1, axis=1) - np.roll(data_real_t, 1, axis=1)) / (2 * delta)
+    grad_y_im_t = (np.roll(data_im_t, -1, axis=1) - np.roll(data_im_t, 1, axis=1)) / (2 * delta)
 
 
-        # data_3d = phase_slice[:,:,z_slice_to_plot]
-        # for i in data_3d[:,:,]
-        #     plt.contourf(i, cmap='RdPu', levels=200)      
-        #     plt.show() 
+    grad_z_real_t = (np.roll(data_real_t, -1, axis=2) - np.roll(data_real_t, 1, axis=2)) / (2 * delta)
+    grad_z_im_t = (np.roll(data_im_t, -1, axis=2) - np.roll(data_im_t, 1, axis=2)) / (2 * delta)
+
+    D_x_alpha = (data_real_t * grad_x_im_t - data_im_t * grad_x_real_t)/(mod_t) 
+    D_y_alpha = (data_real_t * grad_y_im_t - data_im_t * grad_y_real_t)/(mod_t) 
+    D_z_alpha = (data_real_t * grad_z_im_t - data_im_t * grad_z_real_t)/(mod_t) 
 
 
-        # plot_input = input("Do you want to plot the 2D or 3D power spectrum? (2d/3d): ")
-        # # Select the z-slice you want to work with (assuming 0-based indexing)
-        # if plot_input.lower() == "2d":
-plot_power_spectrum(Nx, Ny, delta, scalar_projection, phase_t1, mod_t, np.abs(phi_phase_t), np.abs(phi_phase_t1))
+    # Define the center point (I_0, J_0, K_0)
+    I_0 = Nx // 2  # Assuming Nx, Ny, Nz are the dimensions of your grid
+    J_0 = Ny // 2
+    K_0 = Nz // 2
+
+    # Define the grid spacing along each dimension
+    delta_x = 0.7 
+    delta_y = 0.7
+    delta_z = 0.7
+
+    # Compute the coordinates relative to the center point
+    I_relative = np.arange(Nx) - I_0
+    J_relative = np.arange(Ny) - J_0
+    K_relative = np.arange(Nz) - K_0
+
+    # Create 3D grids of relative coordinates
+    I_grid, J_grid, K_grid = np.meshgrid(I_relative, J_relative, K_relative, indexing='ij')
+
+    # Compute the radial vector components
+    radial_vector_x = I_grid * delta_x
+    radial_vector_y = J_grid * delta_y
+    radial_vector_z = 0
+
+    # Compute the magnitude of the radial vector
+    magnitude_r = np.sqrt(radial_vector_x**2 + radial_vector_y**2 + radial_vector_z**2)
+
+    # Compute the unit vector components
+    unit_vector_x = radial_vector_x / magnitude_r
+    unit_vector_y = radial_vector_y / magnitude_r
+    unit_vector_z = radial_vector_z / magnitude_r
+
+    # Compute the dot product of D with the components of the unit vector
+    D_dot_unit_x = D_x_alpha * unit_vector_x
+    D_dot_unit_y = D_y_alpha * unit_vector_y
+    D_dot_unit_z = D_z_alpha * unit_vector_z
+
+    D_dot_unit_x = np.nan_to_num(D_dot_unit_x)
+    D_dot_unit_y = np.nan_to_num(D_dot_unit_y)
+    D_dot_unit_z = np.nan_to_num(D_dot_unit_z)
+
+
+    scalar_projection = D_dot_unit_x + D_dot_unit_y + D_dot_unit_z
+    
+    for z_plane in range(phase_t.shape[2]):
+        data_2d1 = phase_t[:, :, z_plane]
+
+        mask_neg_2pi_1 = np.isclose(data_2d1, -2 * np.pi, atol=tol)
+        mask_pos_2pi_1 = np.isclose(data_2d1, 2 * np.pi, atol=tol)
+
+        data_2d1[mask_neg_2pi_1] += 2 * np.pi
+        data_2d1[mask_pos_2pi_1] -= 2 * np.pi
+
+        mask_neg_2pi_1_ = np.isclose(data_2d1, - np.pi, atol=tol)
+        mask_pos_2pi_1_ = np.isclose(data_2d1,  np.pi, atol=tol)
+
+        data_2d1[mask_neg_2pi_1_] +=  np.pi
+        data_2d1[mask_pos_2pi_1_] -= np.pi
+
+        phase_t[:, :, z_plane] = data_2d1
+    
+    grad_x_t_comp = (np.roll(phase_t, -1, axis=0) - np.roll(phase_t, 1, axis=0)) / (2 * delta)
+
+    grad_y_t_comp = (np.roll(phase_t, -1, axis=1) - np.roll(phase_t, 1, axis=1)) / (2 * delta)
+
+    grad_z_t_comp = (np.roll(phase_t, -1, axis=2) - np.roll(phase_t, 1, axis=2)) / (2 * delta)
+
+
+    diagnostic_comp = mod_t * (grad_x_t_comp * unit_vector_x + grad_y_t_comp * unit_vector_y + grad_z_t_comp * unit_vector_z)
+    diagnostic_comp = np.nan_to_num(diagnostic_comp)
+    
+# -----------------------------------------------uncomment till here-----------------------------------------------------
+ 
+    # test scalar projection
+    # grad_x_real_test = (np.roll(data_real_test, -1, axis=0) - np.roll(data_real_test, 1, axis=0)) / (2 * delta)
+    # grad_x_im_test = (np.roll(data_im_test, -1, axis=0) - np.roll(data_im_test, 1, axis=0)) / (2 * delta)
+
+    # grad_y_real_test = (np.roll(data_real_test, -1, axis=1) - np.roll(data_real_test, 1, axis=1)) / (2 * delta)
+    # grad_y_im_test = (np.roll(data_im_test, -1, axis=1) - np.roll(data_im_test, 1, axis=1)) / (2 * delta)
+
+
+    # grad_z_real_test = (np.roll(data_real_test, -1, axis=2) - np.roll(data_real_test, 1, axis=2)) / (2 * delta)
+    # grad_z_im_test = (np.roll(data_im_test, -1, axis=2) - np.roll(data_im_test, 1, axis=2)) / (2 * delta)
+
+    # D_x_alpha_test = (data_real_test * grad_x_im_test - data_im_test * grad_x_real_test)/(mod_test) 
+    # D_y_alpha_test = (data_real_test * grad_y_im_test - data_im_test * grad_y_real_test)/(mod_test) 
+    # D_z_alpha_test = (data_real_test * grad_z_im_test - data_im_test * grad_z_real_test)/(mod_test) 
+
+
+    # # Define the center point (I_0, J_0, K_0)
+    # I_0 = Nx // 2  # Assuming Nx, Ny, Nz are the dimensions of your grid
+    # J_0 = Ny // 2
+    # K_0 = Nz // 2
+
+    # # Define the grid spacing along each dimension
+    # delta_x = 0.7 
+    # delta_y = 0.7
+    # delta_z = 0.7
+
+    # # Compute the coordinates relative to the center point
+    # I_relative = np.arange(Nx) - I_0
+    # J_relative = np.arange(Ny) - J_0
+    # K_relative = np.arange(Nz) - K_0
+
+    # # Create 3D grids of relative coordinates
+    # I_grid, J_grid, K_grid = np.meshgrid(I_relative, J_relative, K_relative, indexing='ij')
+
+    # # Compute the radial vector components
+    # radial_vector_x = I_grid * delta_x
+    # radial_vector_y = J_grid * delta_y
+    # radial_vector_z = 0
+
+    # # Compute the magnitude of the radial vector
+    # magnitude_r = np.sqrt(radial_vector_x**2 + radial_vector_y**2 + radial_vector_z**2)
+
+    # # Compute the unit vector components
+    # unit_vector_x = radial_vector_x / magnitude_r
+    # unit_vector_y = radial_vector_y / magnitude_r
+    # unit_vector_z = radial_vector_z / magnitude_r
+
+    # # Compute the dot product of D with the components of the unit vector
+    # D_dot_unit_x_test = D_x_alpha_test * unit_vector_x
+    # D_dot_unit_y_test = D_y_alpha_test * unit_vector_y
+    # D_dot_unit_z_test = D_z_alpha_test * unit_vector_z
+
+    # D_dot_unit_x_test = np.nan_to_num(D_dot_unit_x_test)
+    # D_dot_unit_y_test = np.nan_to_num(D_dot_unit_y_test)
+    # D_dot_unit_z_test = np.nan_to_num(D_dot_unit_z_test)
+
+
+    # scalar_projection_test = D_dot_unit_x_test + D_dot_unit_y_test + D_dot_unit_z_test
+
+
+
+    # Extract the specific z-slice from the 3D array
+    # phase_slice1 = phase_t[:,:,z_slice_to_plot]
+    # phase_slice = phase_t1[:,:,z_slice_to_plot]
+
+
+            # data_3d = phase_slice[:,:,z_slice_to_plot]
+            # for i in data_3d[:,:,]
+            #     plt.contourf(i, cmap='RdPu', levels=200)      
+            #     plt.show() 
+
+
+            # plot_input = input("Do you want to plot the 2D or 3D power spectrum? (2d/3d): ")
+            # # Select the z-slice you want to work with (assuming 0-based indexing)
+            # if plot_input.lower() == "2d":
+    plot_power_spectrum(Nx, Ny, delta, scalar_projection, diagnostic_comp, mod_t, mod_ref_t,phi_phase_ref_t, phi_phase_t, frame_t)
+    # z_planes = [12,25,37,50,62,75,87]
+    # plot_power_spectrum(Nx, Ny, delta, phase_t, phase_t1, mod_t, np.abs(phi_phase_t), np.abs(phi_phase_t1))
+    # plot_3d_power_spectrum(power_spectrum_3d, delta)
+
+    # plot_and_save_power_spectra_3d(phase_t, phase_t1, np.abs(phi_phase_t), np.abs(phi_phase_t1), mod_t, delta, input_directory)   
+
         # elif plot_input.lower() == "3d":
 # power_spectrum_3d = calculate_power_spectrum_3d(phase_t, delta)
 # plot_3d_power_spectrum(power_spectrum_3d, delta)
@@ -1349,10 +2391,10 @@ plot_power_spectrum(Nx, Ny, delta, scalar_projection, phase_t1, mod_t, np.abs(ph
 
 # data_3d = cos1(X) + cos2(X) + cos3(X) + cos4(X) + cos5(X) + cos6(X)
 
-# # Calculate power spectrum
+# # # Calculate power spectrum
 # power_spectrum_3d = calculate_power_spectrum_3d(data_3d, delta)
 
-# # Plot power spectrum
+# # # Plot power spectrum
 # plot_3d_power_spectrum(power_spectrum_3d, delta)
 
 # plot_and_save_power_spectra_3d(phase_t, delta, input_directory)

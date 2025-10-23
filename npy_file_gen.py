@@ -348,7 +348,7 @@
 
 #string position
 
-#--------------------------------------------------------------------------------------------------------------------------------------------------------
+# #--------------------------------------------------------------------------------------------------------------------------------------------------------
 import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
@@ -356,35 +356,44 @@ from mpl_toolkits.mplot3d import Axes3D
 import os
 
 # Set up TeX for rendering
-matplotlib.rcParams.update({
-    'font.family': 'serif',
-    'font.size': 11,
-    'text.usetex': True,
-    'pgf.texsystem': 'pdflatex',
-    'pgf.rcfonts': False,
-})
+# matplotlib.rcParams.update({
+#     'font.family': 'serif',
+#     'font.size': 11,
+#     'text.usetex': True,
+#     'pgf.texsystem': 'pdflatex',
+#     'pgf.rcfonts': False,
+# })
 
 # Function to generate frames
 def generate_frame(i, data, output_directory):
     # Create a 3D scatter plot
     # tolerance = 1e-5  # Set a low tolerance for the division remainder
     # data = data[np.abs(data[:, 2] % 0.3) < tolerance]
-    data = data[np.abs(data[:, 1]) <= 0.4]
+    tick_numbers = 5
+    data = data[np.abs(data[:, 1]) <= 0.004]
     fig = plt.figure(figsize=(8, 6))
     ax = fig.add_subplot(111, projection='3d')
 
-    # Scatter plot with purple markers
-    ax.scatter(data[:, 0], data[:, 1], data[:, 2], s=10, color='#800080', alpha=0.7)
 
-    # Set axis limits
-    ax.set_xlim([-30, 30])
-    ax.set_ylim([-30, 30])
-    ax.set_zlim([-30, 30])
+    # Scatter plot with purple markers
+    ax.scatter(data[:, 0]/spatial_resolution, data[:, 1]/spatial_resolution, data[:, 2]/spatial_resolution, s=10, color='#800080', alpha=0.7)
+
+    # # Set axis limits
+    ax.set_xlim([-half_grid_size, half_grid_size])
+    ax.set_ylim([-half_grid_size, half_grid_size])
+    ax.set_zlim([-half_grid_size, half_grid_size])
+    
+    ax.set_xticks(np.linspace(-half_grid_size, half_grid_size, tick_numbers))
+    ax.set_yticks(np.linspace(-half_grid_size, half_grid_size, tick_numbers))
+    ax.set_zticks(np.linspace(-half_grid_size, half_grid_size, tick_numbers))
 
     # Customize appearance
-    ax.set_xlabel("X", color='#FF1493')  # Pink color
-    ax.set_ylabel("Y", color='#008000')  # Green color
-    ax.set_zlabel("Z", color='#FF8C00')  # Dark orange color
+    ax.set_xlabel(r'$x / \Delta x$', color='#FF1493')  # Pink color
+    ax.set_ylabel(r'$y / \Delta y$', color='#008000')  # Green color
+    ax.zaxis.set_rotate_label(False)
+    ax.set_zlabel(r'$z / \Delta z$', color='#FF8C00', rotation=0)
+    ax.zaxis.label.set_va('center')
+    ax.zaxis.label.set_ha('center')
     # ax.set_title(f"Frame {i}")
 
     # Set a different viewing perspective
@@ -407,7 +416,7 @@ def generate_frame(i, data, output_directory):
     ax.zaxis.pane.fill = False
 
     # Draw arrows for the axes
-    arrow_length = 30
+    arrow_length = 240
     ax.quiver(0, 0, 0, arrow_length, 0, 0, color='#FF1493', arrow_length_ratio=0.1)  # Pink color
     ax.quiver(0, 0, 0, 0, arrow_length, 0, color='#008000', arrow_length_ratio=0.1)  # Green color
     ax.quiver(0, 0, 0, 0, 0, arrow_length, color='#FF8C00', arrow_length_ratio=0.1)  # Dark orange color
@@ -420,7 +429,7 @@ def generate_frame(i, data, output_directory):
     # print(f"Frame {i} generated: {frame_path}")
 
 # Path to the directory containing input files
-input_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/sem_2_xy_abs_z_fix_101/"
+input_directory = "/Users/pranavbharadwajgangrekalvemanoj/Downloads/data_plots/801/GifData/"
 
 # Path to the directory where frames will be saved
 output_directory = os.path.join(input_directory, "pos_plots")
@@ -428,11 +437,14 @@ if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
 # Total number of files
-total_files = 5000  # Assuming the files are numbered from 0 to 700
+total_files = 10  # Assuming the files are numbered from 0 to 700
+half_grid_size = 400
+spatial_resolution = 0.7
+
 
 # Iterate through all input files and generate frames
 for i in range(total_files):
-    input_file_path = os.path.join(input_directory, f"fixed_pergifStringPosData_{i}.txt")
+    input_file_path = os.path.join(input_directory, f"String_Pos_Data_minus_{i}.txt")
 
     # Attempt to load data from the input file
     try:
@@ -453,12 +465,11 @@ for i in range(total_files):
 
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------
-
 # import os
-# import re
 # import imageio
+# from PIL import Image
 
-# frames_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/relevant_files_310124/npy_files_full_positive_boost_ev_1/"
+# frames_directory = "/Volumes/Recent_Archives/P_files_he/npy_files/"
 
 # # Get a list of frames in the frames directory
 # frames = []
@@ -466,24 +477,34 @@ for i in range(total_files):
 # # Get a list of files in the input directory
 # files = sorted(os.listdir(frames_directory))
 
+# # Define a consistent size for all frames (e.g., the size of the first image)
+# consistent_size = None
+
 # # Iterate over the sorted files and append them to the frames list
 # for filename in files:
-#     if filename.startswith("3D_power_spectrum_radius_") and filename.endswith(".png"):
+#     if filename.startswith("12th_z_plot_radius_3") and filename.endswith(".000000.png"):
 #         frame_path = os.path.join(frames_directory, filename)
-#         frames.append(imageio.imread(frame_path))
+#         img = Image.open(frame_path)
+        
+#         # Set the consistent size based on the first image
+#         if consistent_size is None:
+#             consistent_size = img.size  # (width, height)
+        
+#         # Resize the image to the consistent size
+#         img_resized = img.resize(consistent_size, Image.ANTIALIAS)
+#         frames.append(img_resized)
 
-# # Now the 'frames' list contains all frames in ascending order: 'frame_00.png', 'frame_01.png', ...
-
+# # Now the 'frames' list contains all frames resized to the same dimensions
 
 # gif_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/gifs/"
 # if not os.path.exists(gif_directory):
 #     os.makedirs(gif_directory)
 
-# output_gif_file = os.path.join(gif_directory, "power_spectrum_vs_radius_3d_Nz_length_scale_2751st_time_step_201.gif")
+# output_gif_file = os.path.join(gif_directory, "l_test_sss_301_to_350.gif")
 
 # # Check if frames exist
 # try:
-#     imageio.mimsave(output_gif_file, frames, duration=0.1)
+#     imageio.mimsave(output_gif_file, frames, duration=0.2)
 #     print(f"GIF created and saved at: {output_gif_file}")
 # except Exception as e:
 #     print(f"Error creating GIF: {e}")

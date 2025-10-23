@@ -11,18 +11,18 @@ import numpy as np
 import os
 
 # Path to the directory containing input files
-input_directory = "/Users/pranavbharadwajgangrekalvemanoj/Desktop/Axions_Project/sem_2_xy_abs_z_fix_101/"
+input_directory = "/Volumes/Recent_Archives/P_files_he/"
 
 # Path to the directory where .npy files will be saved
-output_directory = os.path.join(input_directory, "npy_files_full_positive_boost_ev_1")
+output_directory = os.path.join(input_directory, "npy_files")
 if not os.path.exists(output_directory):
     os.makedirs(output_directory)
 
 # Number of frames
-num_frames = 2769  # Update this to match the number of frames you have
+num_frames = 52  # Update this to match the number of frames you have
 
 # Iterate through all input files and generate .npy files
-for i in range(2751,num_frames):
+for i in range(12,num_frames):
     try: 
         input_file_path = os.path.join(input_directory, f"fixed_pergifData_{i}.txt")
         
@@ -39,9 +39,9 @@ for i in range(2751,num_frames):
         # col_5 = array_1d[:, 5]
         
         # Reshape the 1D array into a 3D array
-        nx = 101
-        ny = 101
-        nz = 101
+        nx = 201
+        ny = 201
+        nz = 201
         # array_3d_col_0 = col_0.reshape(nx, ny, nz)
         array_3d_col_0 = phi_0.reshape(nx, ny, nz)
         array_3d_col_1 = phi_1.reshape(nx, ny, nz)
@@ -54,11 +54,11 @@ for i in range(2751,num_frames):
         # array_3d_col_5 = col_5.reshape(nx, ny, nz)
         
         # Save the 3D arrays with appropriate filenames
-        np.save(os.path.join(output_directory, f"col_0_frame_{i}.npy"), array_3d_col_0)
+        np.save(os.path.join(output_directory, f"col_0_frame_{i + 300}.npy"), array_3d_col_0)
         # np.save(os.path.join(output_directory, "frame_phi_1_evolved.npy"), array_3d_col_1)
         # np.save(os.path.join(output_directory, "frame_phi_2_evolved.npy"), array_3d_col_2)
         
-        np.save(os.path.join(output_directory, f"col_1_frame_{i}.npy"), array_3d_col_1)
+        np.save(os.path.join(output_directory, f"col_1_frame_{i + 300}.npy"), array_3d_col_1)
         # np.save(os.path.join(output_directory, f"col_2_frame_{i}.npy"), array_3d_col_2)
         # np.save(os.path.join(output_directory, f"negative_debug_col_3.npy"), array_3d_col_3)
         
